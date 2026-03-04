@@ -1,0 +1,20 @@
+{
+  "name": "web-infographic-generator",
+  "version": "1.0.0",
+  "description": "Generate professional long-form informational images (infographics) from web content with the quality of professional editors and tech KOLs",
+  "author": "HappyCapy",
+  "commands": [
+    {
+      "name": "web-infographic",
+      "description": "Analyze web content and generate professional infographics"
+    }
+  ],
+  "dependencies": [
+    "python3",
+    "pip"
+  ],
+  "install": {
+    "script": "install.sh"
+  },
+  "tags": ["web", "infographic", "content-analysis", "image-generation", "visualization"]
+}
