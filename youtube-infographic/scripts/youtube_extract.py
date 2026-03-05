@@ -51,7 +51,7 @@ def get_video_metadata(video_id: str) -> Dict[str, Any]:
     return {'title': '', 'description': '', 'channel': '', 'upload_date': '', 'view_count': 0, 'duration': '', 'tags': []}
 
 
-def get_transcript(video_id: str, max_chars: int = 15000, lang_priority: list = None) -> Dict[str, Any]:
+def get_transcript(video_id: str, max_chars: int = 100000, lang_priority: list = None) -> Dict[str, Any]:
     """
     Get video transcript using youtube-transcript-api.
     Returns transcript text truncated to max_chars for token efficiency.
@@ -200,8 +200,8 @@ def main():
     parser = argparse.ArgumentParser(description='Extract YouTube video content for infographic generation')
     parser.add_argument('url', help='YouTube video URL or video ID')
     parser.add_argument('--output', '-o', default='-', help='Output JSON file path (default: stdout)')
-    parser.add_argument('--max-transcript', type=int, default=15000,
-                        help='Max transcript characters to extract (default: 15000, covers ~30min video in full)')
+    parser.add_argument('--max-transcript', type=int, default=100000,
+                        help='Max transcript characters to extract (default: 100000, covers ~72%% of a 2-hour video)')
     parser.add_argument('--brief', action='store_true',
                         help='Brief mode: limit to 1500 transcript chars for quick testing')
     parser.add_argument('--no-transcript', action='store_true',
