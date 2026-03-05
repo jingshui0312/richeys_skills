@@ -272,8 +272,14 @@ async def do_browse(
     extract_text: bool = False,
     js_eval: str | None = None,
     scroll_pages: int = 0,
+    click_title: str | None = None,
+    scroll_comment: int = 0,
 ):
-    """使用已保存的会话浏览页面"""
+    """使用已保存的会话浏览页面。
+
+    click_title: 在搜索结果中找到标题含此字符串的笔记并点击（自动携带 xsec_token）
+    scroll_comment: 滚动右侧评论面板 N 次（笔记详情页专用）
+    """
     from playwright.async_api import async_playwright
 
     if not is_session_valid():
@@ -291,16 +297,41 @@ async def do_browse(
         page = await context.new_page()
 
         try:
-            await page.goto(url, wait_until="networkidle", timeout=30000)
-            await page.wait_for_timeout(2000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            await page.wait_for_timeout(3000)
 
-            # 滚动若干屏以加载懒加载内容
+            # 点击指定标题的笔记卡片（从搜索结果进入，自动携带 xsec_token）
+            if click_title:
+                cards = await page.query_selector_all('section.note-item')
+                clicked = False
+                for card in cards:
+                    title_el = await card.query_selector('.title span')
+                    if title_el:
+                        text = await title_el.inner_text()
+                        if click_title in text:
+                            print(f"点击笔记: {text.strip()}")
+                            await card.click()
+                            await page.wait_for_timeout(4000)
+                            clicked = True
+                            break
+                if not clicked:
+                    print(f"⚠️ 未找到标题含「{click_title}」的笔记", file=sys.stderr)
+
+            # 用 mouse.wheel 滚动主页面（搜索结果、信息流等）
             for _ in range(scroll_pages):
-                await page.keyboard.press("PageDown")
+                await page.mouse.wheel(0, 600)
                 await page.wait_for_timeout(1500)
 
+            # 滚动右侧评论面板（笔记详情页专用，鼠标移到右侧面板区域）
+            if scroll_comment > 0:
+                await page.mouse.move(890, 400)
+                await page.wait_for_timeout(300)
+                for _ in range(scroll_comment):
+                    await page.mouse.wheel(0, 500)
+                    await page.wait_for_timeout(800)
+
             if screenshot_path:
-                await page.screenshot(path=screenshot_path, full_page=True)
+                await page.screenshot(path=screenshot_path, full_page=False)
                 print(f"截图已保存: {screenshot_path}")
 
             if extract_text:
@@ -350,7 +381,13 @@ def main():
     browse_p.add_argument("--text", action="store_true", help="提取页面文字")
     browse_p.add_argument("--js", metavar="EXPR", help="在页面执行 JS 表达式")
     browse_p.add_argument(
-        "--scroll", type=int, default=0, metavar="N", help="向下滚动 N 屏"
+        "--scroll", type=int, default=0, metavar="N", help="向下滚动主页面 N 次（每次 600px）"
+    )
+    browse_p.add_argument(
+        "--click-title", metavar="TITLE", help="点击搜索结果中标题含此字符串的笔记（自动携带 xsec_token）"
+    )
+    browse_p.add_argument(
+        "--scroll-comment", type=int, default=0, metavar="N", help="滚动右侧评论面板 N 次（笔记详情页专用）"
     )
 
     args = parser.parse_args()
@@ -376,6 +413,8 @@ def main():
                 extract_text=args.text,
                 js_eval=args.js,
                 scroll_pages=args.scroll,
+                click_title=args.click_title,
+                scroll_comment=args.scroll_comment,
             )
         )
 
