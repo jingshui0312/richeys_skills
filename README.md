@@ -81,6 +81,49 @@ export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
 
 ---
 
+### 🎬 youtube-infographic
+
+> 把任意 YouTube 视频变成一张专业信息长图
+
+| 属性 | 值 |
+|------|-----|
+| 版本 | `1.0.0` |
+| 语言 | Python |
+| 作者 | HappyCapy |
+| 风格 | 36氪 / 极客公园 / 少数派 |
+| 依赖 | web-infographic-generator（渲染层） |
+
+**核心能力：**
+
+- 🎥 输入 YouTube URL → 自动提取字幕 + 视频元数据
+- 🤖 Claude 深度分析字幕，翻译并二次创作（非直译）
+- 📊 支持长视频（自动截取关键内容，节省 token）
+- 🌐 优先抓取中文字幕，回退英文字幕
+- 📐 复用 web-infographic-generator 渲染，780px 专业排版
+
+**快速体验：**
+
+```bash
+# 标准模式（生产使用，抓取 4000 字符字幕）
+youtube-infographic "https://www.youtube.com/watch?v=xxxxx"
+
+# 省 token 模式（测试用，仅 1500 字符）
+youtube-infographic "https://youtu.be/xxxxx" --brief
+
+# 仅元数据（最快，跳过字幕）
+youtube-infographic "https://youtu.be/xxxxx" --no-transcript
+```
+
+**依赖安装：**
+
+```bash
+pip install youtube-transcript-api yt-dlp
+```
+
+> ⚠️ 需先安装 `web-infographic-generator`，渲染层由其提供。
+
+---
+
 ### 🦞 openclaw
 
 > 敬请期待...
@@ -96,12 +139,14 @@ cd richeys_skills
 
 # 安装指定 skill
 cd web-infographic-generator && bash install.sh
+cd youtube-infographic && bash install.sh
 ```
 
 或者直接复制到 Claude Skills 目录：
 
 ```bash
 cp -r web-infographic-generator ~/.claude/skills/
+cp -r youtube-infographic ~/.claude/skills/
 ```
 
 ---
@@ -119,6 +164,13 @@ richeys_skills/
 │   └── scripts/
 │       ├── web_infographic.py   # 主程序
 │       └── screenshot.mjs       # Playwright 截图引擎
+├── youtube-infographic/         # YouTube 视频信息长图生成器
+│   ├── skill.json               # Skill 元数据
+│   ├── SKILL.md                 # Claude 使用说明
+│   ├── youtube-infographic      # CLI 入口
+│   ├── install.sh               # 安装脚本
+│   └── scripts/
+│       └── youtube_extract.py   # YouTube 内容提取器
 └── openclaw/                    # 🚧 建设中
 ```
 
