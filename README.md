@@ -124,6 +124,41 @@ pip install youtube-transcript-api yt-dlp
 
 ---
 
+### 📕 xiaohongshu-browser
+
+> 用 Claude 浏览小红书——搜索、截图、提取内容，全自动
+
+| 属性 | 值 |
+|------|-----|
+| 版本 | `1.0.0` |
+| 语言 | Python + Playwright |
+| 触发词 | 小红书 / xhs / xiaohongshu / RED App |
+
+**核心能力：**
+
+- 📱 二维码扫码登录，会话保持 12 小时，无需重复登录
+- 🔍 搜索笔记 / 用户，支持关键词直接检索
+- 📸 自动截图并展示给用户，支持懒加载滚动
+- 📝 提取页面文字内容，结合 Claude 做二次分析
+- 🔄 二维码每 30 秒自动刷新，扫码体验流畅
+
+**触发示例：**
+
+```
+帮我搜一下小红书上关于「极简穿搭」的笔记
+看看小红书这个用户的主页：https://www.xiaohongshu.com/user/profile/xxx
+抓取小红书首页的推荐内容
+```
+
+**依赖安装：**
+
+```bash
+pip install playwright
+playwright install chromium
+```
+
+---
+
 ### 🦞 openclaw
 
 > 敬请期待...
@@ -147,6 +182,7 @@ cd youtube-infographic && bash install.sh
 ```bash
 cp -r web-infographic-generator ~/.claude/skills/
 cp -r youtube-infographic ~/.claude/skills/
+cp -r xiaohongshu-browser ~/.claude/skills/
 ```
 
 ---
@@ -171,6 +207,10 @@ richeys_skills/
 │   ├── install.sh               # 安装脚本
 │   └── scripts/
 │       └── youtube_extract.py   # YouTube 内容提取器
+├── xiaohongshu-browser/         # 小红书浏览器
+│   ├── SKILL.md                 # Claude 使用说明
+│   └── scripts/
+│       └── xhs_session.py       # Playwright 会话管理
 └── openclaw/                    # 🚧 建设中
 ```
 
