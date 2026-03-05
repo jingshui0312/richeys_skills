@@ -1,0 +1,19 @@
+{
+  "name": "youtube-infographic",
+  "version": "1.0.0",
+  "description": "Generate professional long-form infographic images from YouTube videos, matching the quality of 36kr/极客公园/少数派. Extracts transcript and metadata, then Claude analyzes and renders a PNG.",
+  "author": "HappyCapy",
+  "commands": [
+    {
+      "name": "youtube-infographic",
+      "description": "Extract YouTube video content and generate a professional infographic"
+    }
+  ],
+  "dependencies": [
+    "python3",
+    "youtube-transcript-api",
+    "yt-dlp",
+    "web-infographic-generator"
+  ],
+  "tags": ["youtube", "video", "infographic", "transcript", "image-generation", "visualization"]
+}
