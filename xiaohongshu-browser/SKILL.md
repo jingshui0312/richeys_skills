@@ -119,6 +119,31 @@ python3 <skill-path>/scripts/xhs_session.py browse "<url>" \
 
 截图完成后，**用 Read 工具读取 PNG 文件展示给用户**。
 
+### 打开笔记详情
+
+> **重要**：小红书笔记详情页需要 `xsec_token` 参数，直接访问 `/explore/<id>` 会被重定向。
+> 必须先进入搜索结果页，再用 `--click-title` 点击笔记卡片，浏览器自动携带 token。
+
+```bash
+# 搜索后点击指定笔记（--click-title 支持模糊匹配标题关键词）
+python3 <skill-path>/scripts/xhs_session.py browse \
+    "https://www.xiaohongshu.com/search_result?keyword=MacBook&type=normal" \
+    --click-title "粉色" \
+    --screenshot /tmp/xhs_note.png --text
+
+# 打开笔记后滚动评论区（--scroll-comment 滚动右侧评论面板）
+python3 <skill-path>/scripts/xhs_session.py browse \
+    "https://www.xiaohongshu.com/search_result?keyword=MacBook&type=normal" \
+    --click-title "粉色" \
+    --screenshot /tmp/xhs_note.png \
+    --scroll-comment 5
+```
+
+**标准流程**：
+1. 先搜索（不带 `--click-title`），看清标题
+2. 再搜索 + `--click-title 关键词` 打开目标笔记
+3. 如需查看更多评论，加 `--scroll-comment N`
+
 ---
 
 ## 常用 URL 格式
@@ -129,7 +154,6 @@ python3 <skill-path>/scripts/xhs_session.py browse "<url>" \
 | 搜索笔记 | `https://www.xiaohongshu.com/search_result?keyword=<关键词>&type=normal` |
 | 搜索用户 | `https://www.xiaohongshu.com/search_result?keyword=<关键词>&type=user` |
 | 用户主页 | `https://www.xiaohongshu.com/user/profile/<user-id>` |
-| 笔记详情 | `https://www.xiaohongshu.com/explore/<note-id>` |
 | 发现页 | `https://www.xiaohongshu.com/explore` |
 
 ---
