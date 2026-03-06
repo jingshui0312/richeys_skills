@@ -1036,11 +1036,12 @@ await browser.close();
 
         env = os.environ.copy()
         env['PLAYWRIGHT_BROWSERS_PATH'] = os.environ.get('PLAYWRIGHT_BROWSERS_PATH', os.path.expanduser('~/Library/Caches/ms-playwright'))
-        # Add common node_modules paths so playwright can be found
-        node_paths = []
+        # Always put skill's own node_modules first so playwright is always found
+        skill_nm = os.path.join(skill_dir, 'node_modules')
+        node_paths = [skill_nm] if os.path.isdir(skill_nm) else []
         for p in [os.getcwd(), os.path.expanduser('~'), '/home/node/a0/workspace']:
             nm = os.path.join(p, 'node_modules')
-            if os.path.isdir(nm):
+            if os.path.isdir(nm) and nm not in node_paths:
                 node_paths.append(nm)
         if node_paths:
             env['NODE_PATH'] = ':'.join(node_paths)

@@ -23,7 +23,9 @@ For JavaScript-rendered sites (SPA/React/Next.js):
 ```bash
 web-infographic extract "<url>" --js
 ```
-The `--js` flag uses Playwright (Chromium) to fully render the page before extraction — required for React, Next.js, Vue, and other SPA frameworks. If static extraction yields empty content, always retry with `--js`.
+The `--js` flag uses Playwright (Chromium) to fully render the page before extraction — required for React, Next.js, Vue, and other SPA frameworks.
+
+**When to use `--js`**: Use it for known SPA sites (X/Twitter, LinkedIn, GitHub, notion.so, any `.app` domain) or when static extraction returns fewer than ~200 chars of content. When in doubt, try static first — if content is empty or clearly incomplete, retry with `--js`.
 
 **Step 2 — Agent analyzes content**
 
@@ -130,7 +132,7 @@ web-infographic analyze "<url>" [--output path.png]
 }
 ```
 
-## HTML Design Spec (for Path B — no CLI)
+## HTML Design Spec (for Path 2 — no CLI)
 
 When generating HTML directly, use these design tokens and structure:
 
