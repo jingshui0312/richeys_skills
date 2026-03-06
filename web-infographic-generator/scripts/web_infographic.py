@@ -21,10 +21,47 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def fetch_web_content(url: str) -> Dict[str, Any]:
-    """Fetch and parse web content using multiple strategies"""
+def _parse_html_content(html: str, url: str, title_fallback: str = "Untitled") -> Dict[str, Any]:
+    """Parse HTML string into structured content dict (shared by static and JS fetch)"""
     from bs4 import BeautifulSoup
 
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Remove unwanted elements
+    for elem in soup(["script", "style", "nav", "footer", "header", "aside", "iframe"]):
+        elem.decompose()
+
+    # Extract title
+    h1 = soup.find('h1')
+    title_text = h1.get_text().strip() if h1 else (soup.title.string if soup.title else title_fallback)
+
+    # Try multiple content extraction strategies
+    article = (
+        soup.find('article') or
+        soup.find('main') or
+        soup.find(class_=re.compile(r'content|article|post|entry|blog', re.I)) or
+        soup.find(id=re.compile(r'content|article|post|entry|main', re.I)) or
+        soup.body
+    )
+
+    paragraphs = []
+    if article:
+        for elem in article.find_all(['p', 'h2', 'h3', 'h4', 'li', 'blockquote']):
+            text = elem.get_text().strip()
+            if len(text) > 15:
+                paragraphs.append({"tag": elem.name, "text": text})
+
+    content = "\n\n".join([p["text"] for p in paragraphs])
+    return {
+        "url": url,
+        "title": title_text,
+        "content": content[:30000],
+        "structured": paragraphs
+    }
+
+
+def fetch_web_content(url: str) -> Dict[str, Any]:
+    """Fetch and parse static web content (requests + BeautifulSoup)"""
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -32,47 +69,79 @@ def fetch_web_content(url: str) -> Dict[str, Any]:
         response = requests.get(url, headers=headers, timeout=30, verify=False)
         response.raise_for_status()
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Remove unwanted elements
-        for elem in soup(["script", "style", "nav", "footer", "header", "aside", "iframe"]):
-            elem.decompose()
-
-        # Extract title
-        title = soup.find('h1')
-        title_text = title.get_text().strip() if title else (soup.title.string if soup.title else "Untitled")
-
-        # Try multiple content extraction strategies
-        article = (
-            soup.find('article') or
-            soup.find('main') or
-            soup.find(class_=re.compile(r'content|article|post|entry|blog', re.I)) or
-            soup.find(id=re.compile(r'content|article|post|entry|main', re.I)) or
-            soup.body
-        )
-
-        paragraphs = []
-        if article:
-            for elem in article.find_all(['p', 'h2', 'h3', 'h4', 'li', 'blockquote']):
-                text = elem.get_text().strip()
-                if len(text) > 15:
-                    tag = elem.name
-                    paragraphs.append({"tag": tag, "text": text})
-
-        content = "\n\n".join([p["text"] for p in paragraphs])
-
-        print(f"Extracted {len(paragraphs)} paragraphs, {len(content)} chars", file=sys.stderr)
-
-        return {
-            "url": url,
-            "title": title_text,
-            "content": content[:30000],
-            "structured": paragraphs
-        }
+        result = _parse_html_content(response.text, url)
+        print(f"Extracted {len(result['structured'])} paragraphs, {len(result['content'])} chars", file=sys.stderr)
+        return result
 
     except Exception as e:
         print(f"Error fetching content: {e}", file=sys.stderr)
         return {"url": url, "title": "Untitled", "content": "", "structured": []}
+
+
+def fetch_web_content_js(url: str) -> Dict[str, Any]:
+    """Fetch JS-rendered web content using Playwright (for SPA/React/Next.js sites)"""
+    skill_dir = Path(__file__).parent.parent
+
+    script = tempfile.NamedTemporaryFile(
+        suffix='.mjs', delete=False, mode='w', encoding='utf-8',
+        dir=str(skill_dir)
+    )
+    script.write(f"""
+import {{ chromium }} from 'playwright';
+
+const browser = await chromium.launch({{ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }});
+const page = await browser.newPage();
+await page.setViewportSize({{ width: 1280, height: 800 }});
+try {{
+  await page.goto({json.dumps(url)}, {{ waitUntil: 'networkidle', timeout: 30000 }});
+}} catch (e) {{
+  // networkidle timeout is fine — page may still have content
+}}
+await page.waitForTimeout(2000);
+const title = await page.title();
+const html = await page.content();
+console.log(JSON.stringify({{ title, html }}));
+await browser.close();
+""")
+    script.close()
+
+    try:
+        env = os.environ.copy()
+        env['PLAYWRIGHT_BROWSERS_PATH'] = os.environ.get(
+            'PLAYWRIGHT_BROWSERS_PATH',
+            os.path.expanduser('~/Library/Caches/ms-playwright')
+        )
+
+        print(f"JS rendering {url} with Playwright...", file=sys.stderr)
+        result = subprocess.run(
+            ['node', script.name],
+            capture_output=True, text=True, timeout=60, env=env
+        )
+
+        if result.returncode != 0:
+            print(f"Playwright JS fetch error: {result.stderr[:300]}", file=sys.stderr)
+            return {"url": url, "title": "Untitled", "content": "", "structured": []}
+
+        data = json.loads(result.stdout.strip())
+        page_title = data.get('title', 'Untitled')
+        html_content = data.get('html', '')
+
+        parsed = _parse_html_content(html_content, url, title_fallback=page_title)
+        # Prefer page.title() which reflects JS-set document.title
+        if page_title and page_title != 'Untitled':
+            parsed['title'] = page_title
+
+        print(f"JS-rendered: extracted {len(parsed['structured'])} paragraphs, {len(parsed['content'])} chars", file=sys.stderr)
+        return parsed
+
+    except Exception as e:
+        print(f"Error in JS fetch: {e}", file=sys.stderr)
+        return {"url": url, "title": "Untitled", "content": "", "structured": []}
+    finally:
+        try:
+            os.unlink(script.name)
+        except Exception:
+            pass
 
 
 def analyze_with_llm(web_data: Dict[str, Any], max_sections: int = 8) -> Dict[str, Any]:
@@ -1013,6 +1082,7 @@ def main():
     extract_parser = subparsers.add_parser('extract', help='Extract web content as JSON (for Claude to analyze)')
     extract_parser.add_argument('url', help='Web page URL to extract')
     extract_parser.add_argument('--output', default='-', help='Output JSON file path (default: stdout)')
+    extract_parser.add_argument('--js', action='store_true', help='Use Playwright to render JS before extracting (for SPA/React/Next.js sites)')
 
     # Analyze command - fetch URL and generate (legacy: requires AI_GATEWAY_API_KEY)
     analyze_parser = subparsers.add_parser('analyze', help='Analyze web URL and generate infographic (requires AI_GATEWAY_API_KEY)')
@@ -1033,10 +1103,14 @@ def main():
 
     if args.command == 'extract':
         print(f"Fetching content from {args.url}...", file=sys.stderr)
-        web_data = fetch_web_content(args.url)
+        if args.js:
+            web_data = fetch_web_content_js(args.url)
+        else:
+            web_data = fetch_web_content(args.url)
 
         if not web_data.get('content'):
-            print("Warning: No content extracted. The site may use JavaScript rendering.", file=sys.stderr)
+            hint = " Try --js for JavaScript-rendered sites." if not args.js else ""
+            print(f"Warning: No content extracted.{hint}", file=sys.stderr)
 
         output_json = json.dumps(web_data, ensure_ascii=False, indent=2)
 

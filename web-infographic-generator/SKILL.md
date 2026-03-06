@@ -19,7 +19,11 @@ For static HTML:
 web-infographic extract "<url>"
 ```
 
-For JavaScript-rendered sites (SPA/React/Next.js), use the agent's web fetch capability instead.
+For JavaScript-rendered sites (SPA/React/Next.js):
+```bash
+web-infographic extract "<url>" --js
+```
+The `--js` flag uses Playwright (Chromium) to fully render the page before extraction — required for React, Next.js, Vue, and other SPA frameworks. If static extraction yields empty content, always retry with `--js`.
 
 **Step 2 — Agent analyzes content**
 
@@ -54,7 +58,7 @@ web-infographic create --content /tmp/content.json --output ~/info_graph/result.
 ## Architecture
 
 - **Rendering Engine**: HTML/CSS + Playwright full-page screenshot (780px width)
-- **Content Extraction**: Python (`requests` + BeautifulSoup) — CLI `extract` command
+- **Content Extraction**: Python (`requests` + BeautifulSoup) for static HTML; Playwright (Node.js) for JS-rendered pages — CLI `extract` / `extract --js`
 - **Content Analysis**: Always performed by the running agent's own LLM (all paths)
 - **Visual Design**: Clean editorial style with green/teal accent, matching professional tech media standards
 - **Typography**: Noto Sans SC (Google Fonts) for Chinese, system sans-serif for English
@@ -80,9 +84,11 @@ web-infographic create --content /tmp/content.json --output ~/info_graph/result.
 ## CLI Commands
 
 ```bash
-# RECOMMENDED: Extract raw content for the agent to analyze (static HTML sites)
-web-infographic extract "<url>"                     # stdout
-web-infographic extract "<url>" --output raw.json   # to file
+# Extract raw content for the agent to analyze
+web-infographic extract "<url>"                        # static HTML, stdout
+web-infographic extract "<url>" --js                   # JS-rendered (SPA/React/Next.js)
+web-infographic extract "<url>" --output raw.json      # static, to file
+web-infographic extract "<url>" --js --output raw.json # JS-rendered, to file
 
 # Generate infographic from agent-produced content JSON
 web-infographic create --content "content.json" [--output path.png]
