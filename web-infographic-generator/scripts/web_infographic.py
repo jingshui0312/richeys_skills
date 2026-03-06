@@ -59,13 +59,15 @@ def fetch_web_content(url: str) -> Dict[str, Any]:
                     tag = elem.name
                     paragraphs.append({"tag": tag, "text": text})
 
-        content = "\n\n".join([p["text"] for p in paragraphs[:60]])
+        content = "\n\n".join([p["text"] for p in paragraphs])
+
+        print(f"Extracted {len(paragraphs)} paragraphs, {len(content)} chars", file=sys.stderr)
 
         return {
             "url": url,
             "title": title_text,
-            "content": content[:8000],
-            "structured": paragraphs[:60]
+            "content": content[:30000],
+            "structured": paragraphs
         }
 
     except Exception as e:
@@ -95,7 +97,7 @@ def analyze_with_llm(web_data: Dict[str, Any], max_sections: int = 8) -> Dict[st
 来源：{web_data['url']}
 
 内容：
-{web_data['content'][:5000]}
+{web_data['content']}
 
 ## 编辑要求
 
@@ -189,6 +191,19 @@ def analyze_with_llm(web_data: Dict[str, Any], max_sections: int = 8) -> Dict[st
   ]
 }}"""
 
+    model = os.environ.get('AI_GATEWAY_MODEL', 'gpt-4o-mini')
+    print(f"Using model: {model}", file=sys.stderr)
+
+    # Build request body — response_format is optional, not all providers support it
+    request_body = {
+        'model': model,
+        'messages': [{'role': 'user', 'content': prompt}],
+        'temperature': 0.7,
+        'max_tokens': 4000,
+    }
+    if os.environ.get('AI_GATEWAY_JSON_MODE', '1') != '0':
+        request_body['response_format'] = {'type': 'json_object'}
+
     try:
         response = requests.post(
             os.environ.get('AI_GATEWAY_BASE_URL', 'https://your-gateway.example.com/api/v1').rstrip('/') + '/chat/completions',
@@ -196,15 +211,7 @@ def analyze_with_llm(web_data: Dict[str, Any], max_sections: int = 8) -> Dict[st
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json'
             },
-            json={
-                'model': 'gpt-4o-mini',
-                'messages': [
-                    {'role': 'user', 'content': prompt}
-                ],
-                'temperature': 0.7,
-                'max_tokens': 4000,
-                'response_format': {'type': 'json_object'}
-            },
+            json=request_body,
             timeout=90,
             verify=False
         )
@@ -212,6 +219,9 @@ def analyze_with_llm(web_data: Dict[str, Any], max_sections: int = 8) -> Dict[st
         if response.status_code == 200:
             result = response.json()
             content_text = result['choices'][0]['message']['content']
+            # Strip markdown code fences if model wraps JSON in ```json ... ```
+            content_text = re.sub(r'^```(?:json)?\s*', '', content_text.strip())
+            content_text = re.sub(r'\s*```$', '', content_text)
             analyzed = json.loads(content_text)
             block_count = len(analyzed.get('blocks', []))
             print(f"AI analysis complete: {block_count} content blocks generated", file=sys.stderr)
@@ -918,6 +928,8 @@ def render_html_to_image(html_content: str, output_path: str, width: int = 780) 
     """Render HTML to PNG image using Playwright for full-page capture"""
     import shutil
 
+    output_path = os.path.expanduser(output_path)
+
     # Write HTML to temp file
     html_file = tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w', encoding='utf-8')
     html_file.write(html_content)
@@ -997,24 +1009,46 @@ def main():
 
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
-    # Analyze command - fetch URL and generate
-    analyze_parser = subparsers.add_parser('analyze', help='Analyze web URL and generate infographic')
+    # Extract command - fetch URL and output raw content JSON for Claude to analyze
+    extract_parser = subparsers.add_parser('extract', help='Extract web content as JSON (for Claude to analyze)')
+    extract_parser.add_argument('url', help='Web page URL to extract')
+    extract_parser.add_argument('--output', default='-', help='Output JSON file path (default: stdout)')
+
+    # Analyze command - fetch URL and generate (legacy: requires AI_GATEWAY_API_KEY)
+    analyze_parser = subparsers.add_parser('analyze', help='Analyze web URL and generate infographic (requires AI_GATEWAY_API_KEY)')
     analyze_parser.add_argument('url', help='Web page URL to analyze')
-    analyze_parser.add_argument('--output', default='outputs/infographic.png', help='Output file path')
+    analyze_parser.add_argument('--output', default=os.path.expanduser('~/info_graph/infographic.png'), help='Output file path')
 
     # Create command - from JSON content
     create_parser = subparsers.add_parser('create', help='Create infographic from JSON content')
     create_parser.add_argument('--content', required=True, help='Path to content JSON file')
-    create_parser.add_argument('--output', default='outputs/infographic.png', help='Output file path')
+    create_parser.add_argument('--output', default=os.path.expanduser('~/info_graph/infographic.png'), help='Output file path')
 
     # HTML command - just generate HTML (for debugging)
     html_parser = subparsers.add_parser('html', help='Generate HTML only (no screenshot)')
     html_parser.add_argument('--content', required=True, help='Path to content JSON file')
-    html_parser.add_argument('--output', default='outputs/infographic.html', help='Output HTML file path')
+    html_parser.add_argument('--output', default=os.path.expanduser('~/info_graph/infographic.html'), help='Output HTML file path')
 
     args = parser.parse_args()
 
-    if args.command == 'analyze':
+    if args.command == 'extract':
+        print(f"Fetching content from {args.url}...", file=sys.stderr)
+        web_data = fetch_web_content(args.url)
+
+        if not web_data.get('content'):
+            print("Warning: No content extracted. The site may use JavaScript rendering.", file=sys.stderr)
+
+        output_json = json.dumps(web_data, ensure_ascii=False, indent=2)
+
+        if args.output == '-':
+            print(output_json)
+        else:
+            os.makedirs(os.path.dirname(args.output) if os.path.dirname(args.output) else '.', exist_ok=True)
+            with open(args.output, 'w', encoding='utf-8') as f:
+                f.write(output_json)
+            print(f"Content saved to: {args.output}", file=sys.stderr)
+
+    elif args.command == 'analyze':
         print(f"Fetching content from {args.url}...", file=sys.stderr)
         web_data = fetch_web_content(args.url)
 
@@ -1037,7 +1071,11 @@ def main():
 
     elif args.command == 'create':
         with open(args.content, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            raw = f.read()
+        # Strip markdown code fences in case agent wrapped JSON in ```json ... ```
+        raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
+        raw = re.sub(r'\s*```$', '', raw)
+        data = json.loads(raw)
 
         html = generate_html(data)
 
@@ -1054,7 +1092,11 @@ def main():
 
     elif args.command == 'html':
         with open(args.content, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            raw = f.read()
+        # Strip markdown code fences in case agent wrapped JSON in ```json ... ```
+        raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
+        raw = re.sub(r'\s*```$', '', raw)
+        data = json.loads(raw)
 
         html = generate_html(data)
 
