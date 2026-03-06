@@ -4,44 +4,58 @@
 
 Use this skill whenever the user asks to: generate an infographic, create a long-form image from a URL, analyze web content visually, produce 信息长图, or any task involving converting web articles into professional visual summaries.
 
-## How Claude Should Use This Skill
+## Workflow — Choose a Path Based on Available Tools
 
-When the user provides a URL and wants an infographic, follow this workflow:
+The agent itself performs the LLM analysis in all cases. Choose a path based on which tools are available.
 
-### Step 1: Extract Content
-For **static HTML sites**, the CLI can fetch directly:
+---
+
+### Path 1: Agent + CLI (Bash tool available)
+
+**Step 1 — Extract raw content**
+
+For static HTML:
 ```bash
-web-infographic analyze "<url>" --output outputs/infographic.png
+web-infographic extract "<url>"
 ```
 
-For **JavaScript-rendered sites** (SPA, React, etc.), use the browser tool first:
+For JavaScript-rendered sites (SPA/React/Next.js), use the agent's web fetch capability instead.
+
+**Step 2 — Agent analyzes content**
+
+The agent reads the raw content and produces structured JSON following the Content JSON Format and Editorial Principles below. Save to `/tmp/content.json`.
+
+**Step 3 — Render**
 ```bash
-browser navigate "<url>"
-browser console exec "document.querySelectorAll('h1,h2,h3,p,li,blockquote').forEach(el => { ... })"
-```
-Then save extracted text and run LLM analysis via Python.
-
-### Step 2: LLM Content Analysis
-The skill calls the AI Gateway API (`AI_GATEWAY_BASE_URL` + `/chat/completions`) with `gpt-4o-mini` to:
-- Deeply analyze and restructure content in professional Chinese editorial voice
-- Produce structured JSON with rich block types (text, insight, steps, comparison, stats, questions, list, quote, etc.)
-- Create engaging headlines and concise bullet points
-
-### Step 3: Generate HTML and Screenshot
-```bash
-# From analyzed JSON:
-web-infographic create --content analyzed.json --output outputs/result.png
-
-# Or just generate HTML for preview:
-web-infographic html --content analyzed.json --output outputs/result.html
+web-infographic create --content /tmp/content.json --output ~/info_graph/result.png
 ```
 
-The Playwright engine renders a full-page screenshot at 780px width.
+---
+
+### Path 2: Agent-Only (no Bash tool available)
+
+**Step 1 — Fetch content** via the agent's web browsing / fetch capability.
+
+**Step 2 — Agent analyzes content** → produces blocks JSON per the format below.
+
+**Step 3 — Agent generates HTML directly** using the HTML Design Spec below, and outputs it as an artifact or file.
+
+---
+
+### Editorial Principles (Step 2 — all paths)
+
+- 标题要有冲击力，能引发好奇心（15字以内）
+- 每个block的文案都要重新撰写，不是简单摘抄原文
+- 用中文撰写，保持专业但不晦涩
+- 创造视觉节奏：大标题 → 导语 → 洞察 → 步骤 → 深入分析 → 数据 → 总结
+- 总共产出 8-15 个 blocks，确保内容丰富但不冗余
+- 对于英文原文，需要翻译并进行二次创作，而非直译
 
 ## Architecture
 
 - **Rendering Engine**: HTML/CSS + Playwright full-page screenshot (780px width)
-- **Content Analysis**: LLM-powered editorial analysis (AI Gateway API)
+- **Content Extraction**: Python (`requests` + BeautifulSoup) — CLI `extract` command
+- **Content Analysis**: Always performed by the running agent's own LLM (all paths)
 - **Visual Design**: Clean editorial style with green/teal accent, matching professional tech media standards
 - **Typography**: Noto Sans SC (Google Fonts) for Chinese, system sans-serif for English
 - **Skill Location**: `~/.claude/skills/web-infographic-generator/`
@@ -66,14 +80,18 @@ The Playwright engine renders a full-page screenshot at 780px width.
 ## CLI Commands
 
 ```bash
-# Analyze URL and generate infographic (works for static HTML sites)
-web-infographic analyze "<url>" [--output path.png]
+# RECOMMENDED: Extract raw content for the agent to analyze (static HTML sites)
+web-infographic extract "<url>"                     # stdout
+web-infographic extract "<url>" --output raw.json   # to file
 
-# Generate from pre-analyzed JSON content
+# Generate infographic from agent-produced content JSON
 web-infographic create --content "content.json" [--output path.png]
 
 # Generate HTML only (for preview/debugging)
 web-infographic html --content "content.json" [--output path.html]
+
+# LEGACY: Full pipeline with external LLM API (requires AI_GATEWAY_API_KEY)
+web-infographic analyze "<url>" [--output path.png]
 ```
 
 ## Content JSON Format
@@ -106,15 +124,42 @@ web-infographic html --content "content.json" [--output path.html]
 }
 ```
 
-## Requirements
+## HTML Design Spec (for Path B — no CLI)
+
+When generating HTML directly, use these design tokens and structure:
+
+**Page:** 780px wide, white background, `font-family: 'Noto Sans SC', sans-serif`, load from Google Fonts.
+
+**Colors:**
+- Accent: `#1a9a6b` (green) — used for headings, bullets, numbers, insight/quote backgrounds
+- Accent light: `#e8f5ee` — highlight block background
+- Yellow bg: `#fef9e7`, border `#f0d858` — questions block
+- Red: `#e74c3c` — question bullets
+
+**Block HTML patterns** (container `<div class="container">` with `padding: 48px 50px`):
+
+- `text` → `<div class="block-text"><p>…</p></div>`
+- `insight` → green background div, white text, label + content
+- `steps` → CSS grid of cards, each with numbered circle (accent bg), title, subtitle, bullet list
+- `section` → heading with 2px accent bottom border + bullet list with `▸` prefix
+- `comparison` → 2-column CSS grid, each column in `#f8fafb` card
+- `questions` → yellow bg, left 4px accent border, `❓` icon, red `●` bullets
+- `stats` → yellow bg, large font (36px 900 weight) values in grid
+- `list` → numbered items with accent-colored numbers
+- `quote` → green background, `❝` mark, white text
+- `divider` → `<hr>` with `#e8e8e8` color
+
+Footer: source URL in accent color, separated by `1px #eee` top border.
+
+## Requirements (Path A only)
 
 - Python 3.11+ with `requests`, `beautifulsoup4`, `lxml`
 - Node.js with `playwright` package (installed in skill dir)
-- Playwright Chromium browser (at `/ms-playwright/`)
-- `AI_GATEWAY_API_KEY` and `AI_GATEWAY_BASE_URL` environment variables (required only for URL analyze mode)
+- Playwright Chromium browser (at `~/Library/Caches/ms-playwright`)
 
 ## Output
 
-- PNG image: 780px width, auto height, full-page capture
-- HTML file: Also saved alongside for preview/editing
+- **Fixed output directory**: `~/info_graph/` — always use this, never /tmp or other paths
+- **Path 1**: PNG (780px wide, full-page) + HTML file saved alongside in same directory
+- **Path 2**: HTML artifact or file saved to output directory
 - Professional editorial quality matching Chinese tech media standards (36kr, GeekPark, SSPAI)
