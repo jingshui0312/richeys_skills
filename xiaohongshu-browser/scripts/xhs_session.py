@@ -300,20 +300,27 @@ async def do_browse(
             await page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await page.wait_for_timeout(3000)
 
-            # 点击指定标题的笔记卡片（从搜索结果进入，自动携带 xsec_token）
+            # 打开指定标题的笔记（用 JS 提取链接直接 goto，绕过可见性问题）
             if click_title:
-                cards = await page.query_selector_all('section.note-item')
+                notes = await page.evaluate("""() => {
+                    return Array.from(document.querySelectorAll('section.note-item')).map(card => {
+                        const titleEl = card.querySelector('.title span');
+                        const linkEl = card.querySelector('a[href*="/explore/"]');
+                        return {
+                            title: titleEl ? titleEl.innerText.trim() : '',
+                            href: linkEl ? linkEl.getAttribute('href') : null
+                        };
+                    }).filter(n => n.href);
+                }""")
                 clicked = False
-                for card in cards:
-                    title_el = await card.query_selector('.title span')
-                    if title_el:
-                        text = await title_el.inner_text()
-                        if click_title in text:
-                            print(f"点击笔记: {text.strip()}")
-                            await card.click()
-                            await page.wait_for_timeout(4000)
-                            clicked = True
-                            break
+                for note in notes:
+                    if click_title in note['title']:
+                        full_url = f"https://www.xiaohongshu.com{note['href']}"
+                        print(f"打开笔记: {note['title']}")
+                        await page.goto(full_url, wait_until="domcontentloaded", timeout=30000)
+                        await page.wait_for_timeout(4000)
+                        clicked = True
+                        break
                 if not clicked:
                     print(f"⚠️ 未找到标题含「{click_title}」的笔记", file=sys.stderr)
 
