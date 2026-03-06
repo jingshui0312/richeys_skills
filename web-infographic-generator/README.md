@@ -1,211 +1,115 @@
-# 网页内容信息长图生成器
+# 网页内容信息长图生成器 v2
 
-一个专业的信息长图生成工具，能够深度分析网页内容并生成高质量的垂直信息图，达到专业编辑和科技KOL的水准。
+深度分析网页内容并生成专业级信息长图，对齐 36氪、极客公园、少数派专栏的品质。
 
-## 特点
+## 设计理念
 
-✨ **完美支持中文** - 内置中文字体支持，智能文本换行
-🎨 **多种视觉风格** - 科技、商务、手绘漫画等多种专业模板
-📱 **社交媒体优化** - 1080px宽度，完美适配各大平台
-🚀 **一键生成** - 从URL到信息长图，全自动化流程
-📊 **结构化布局** - 自动提取关键信息，专业排版
-🎬 **分镜设计专家** - 内置AI分镜和画面设计专家，智能分析内容结构并设计最佳视觉呈现方案
+**Agent 做分析，CLI 做渲染。** 内容理解由运行此 skill 的 Agent（Claude、GLM、MiniMax 等任意 LLM）完成，CLI 工具负责内容提取和图片渲染，无需额外 API Key。
 
-## 🎬 分镜设计专家系统
+## 工作流
 
-本工具内置了专业的**分镜和画面设计专家**，能够像资深视觉编辑一样分析和设计内容呈现：
-
-### 专家能力
-
-1. **内容类型识别** - 自动判断内容类型（科技文章/教程/报告/故事等）
-2. **信息层级分析** - 识别核心信息和次要信息，确定最佳展示顺序
-3. **视觉节奏设计** - 控制信息密度，平衡文字与视觉元素比例
-4. **智能图标匹配** - 根据内容关键词自动选择最合适的图标
-5. **视觉焦点设定** - 设计阅读动线和视觉重点
-
-### 分析流程
-
-```
-网页内容 → 分镜专家分析 → 结构化设计 → 视觉呈现 → 精美长图
-```
-
-## 快速开始
-
-### 1. 分析网页并生成信息长图（AI分镜设计）
+### Path 1：Agent + CLI（推荐）
 
 ```bash
-web-infographic analyze "https://example.com/article" --style comic
+# Step 1：提取网页内容
+web-infographic extract "<url>"
+
+# Step 2：Agent 分析内容，生成 content.json（见格式说明）
+
+# Step 3：渲染为信息长图
+web-infographic create --content /tmp/content.json --output ~/info_graph/result.png
 ```
 
-分镜专家会自动：
-- 分析内容主题和类型
-- 提取关键信息并排序
-- 设计视觉节奏和重点
-- 匹配最佳图标和配色
-- 推荐最适合的视觉风格
+### Path 2：纯 Agent 模式（无 Bash 工具时）
 
-### 2. 使用自定义内容
+Agent 通过 WebFetch 抓取网页内容 → 分析生成 HTML → 保存到 `~/info_graph/`。
 
-创建内容文件 `content.json`:
+## CLI 命令
+
+```bash
+# 提取网页原始内容（输出 JSON，供 Agent 分析）
+web-infographic extract "<url>"
+web-infographic extract "<url>" --output raw.json
+
+# 从 Agent 生成的 content.json 渲染 PNG
+web-infographic create --content content.json [--output ~/info_graph/result.png]
+
+# 仅生成 HTML（用于预览/调试）
+web-infographic html --content content.json [--output ~/info_graph/result.html]
+
+# 独立 CLI 模式（需要 AI_GATEWAY_API_KEY，不推荐在 skill 场景使用）
+web-infographic analyze "<url>" [--output ~/info_graph/result.png]
+```
+
+## Content JSON 格式
+
+Agent 分析后输出以下结构，保存为 JSON 文件供 CLI 渲染：
+
 ```json
 {
-  "title": "2026年AI发展趋势",
-  "subtitle": "深度解析人工智能领域的最新动态",
-  "sections": [
-    {
-      "heading": "技术突破",
-      "points": ["多模态AI融合", "边缘计算普及"],
-      "icon": "rocket"
-    }
-  ],
-  "footer": "来源：AI研究报告"
+  "meta": {
+    "author": "来源/作者",
+    "source": "https://example.com/article",
+    "title": "中文主标题（15字以内）",
+    "subtitle": "ENGLISH SUBTITLE IN CAPS",
+    "description": "一句话描述"
+  },
+  "blocks": [
+    {"type": "text", "content": "导语段落"},
+    {"type": "insight", "label": "核心洞察", "content": "关键洞察"},
+    {"type": "steps", "title": "步骤标题", "items": [
+      {"number": 1, "title": "步骤名", "subtitle": "副标题", "points": ["要点1", "要点2"]}
+    ]},
+    {"type": "section", "title": "章节", "content": "引导文字", "points": ["要点1"]},
+    {"type": "comparison", "columns": [
+      {"title": "对比A", "subtitle": "副标题", "points": ["要点1"]},
+      {"title": "对比B", "subtitle": "副标题", "points": ["要点1"]}
+    ]},
+    {"type": "questions", "title": "关键问题", "icon": "red", "items": ["问题1？"]},
+    {"type": "stats", "items": [{"value": "90%", "label": "描述"}]},
+    {"type": "list", "title": "行动清单", "items": ["行动1", "行动2"]},
+    {"type": "quote", "content": "结语金句", "source": "来源"},
+    {"type": "highlight", "content": "高亮文本"},
+    {"type": "divider"}
+  ]
 }
 ```
 
-生成信息长图:
+## Block 类型说明
+
+| Block 类型 | 视觉效果 |
+|-----------|---------|
+| `text` | 正文段落 |
+| `insight` | 绿色背景核心洞察框 |
+| `steps` | 编号步骤卡片网格 |
+| `section` | 带标题的要点列表 |
+| `comparison` | 双列对比卡片 |
+| `questions` | 黄色背景关键问题 |
+| `stats` | 大字数据展示 |
+| `list` | 编号行动清单 |
+| `quote` | 绿色背景引用结语 |
+| `highlight` | 浅绿高亮文本 |
+| `divider` | 分割线 |
+
+## 输出
+
+- **默认输出目录**：`~/info_graph/`（不存在时自动创建）
+- **格式**：PNG（780px 宽，全页高度）+ HTML 同步保存
+- **视觉风格**：绿色/青色主色调，对齐中文科技媒体排版标准
+
+## 兼容性
+
+- **任意 LLM**：SKILL.md 指令与模型无关，Claude、GLM、MiniMax 等均可驱动
+- **GLM/MiniMax 输出容错**：`create` 和 `html` 命令自动剥离 Markdown 代码围栏（\`\`\`json ... \`\`\`）
+- **内容无截断**：提取上限 30,000 字符，覆盖绝大多数长文
+
+## 环境依赖
+
+- Python 3.11+（含 `requests`、`beautifulsoup4`、`lxml`）
+- Node.js + Playwright（用于截图渲染）
+- Playwright Chromium 浏览器
+
 ```bash
-web-infographic create --title "AI趋势" --content content.json --style creative
+# 安装依赖
+bash install.sh
 ```
-
-### 3. 手绘漫画风格（推荐！）
-
-```bash
-# 浅黄色背景手绘风格
-web-infographic create --title "AI趋势" --content content.json --style comic
-
-# 白色背景手绘风格
-web-infographic create --title "AI趋势" --content content.json --style comic-white
-```
-
-**手绘漫画风格特点：**
-- 手绘波浪边框，充满趣味性
-- 虚线章节框，增添活泼感
-- 彩色装饰圆点
-- 波浪形分割线
-- 温暖柔和的配色
-
-## 视觉风格
-
-### tech（科技风格）
-- 深色背景（深蓝色）
-- 蓝色强调色
-- 适合：科技文章、产品介绍
-
-### business（商务风格）
-- 白色背景
-- 专业简洁
-- 适合：商业报告、行业分析
-
-### creative（创意风格）
-- 紫色渐变背景
-- 黄色强调色
-- 适合：创意内容、营销推广
-
-### minimal（极简风格）
-- 纯白背景
-- 黑色文字
-- 适合：教育内容、学术文章
-
-### comic（手绘漫画风格 - 浅黄底）⭐ 新增
-- 浅黄色背景（#FFFEF0）
-- 手绘波浪边框
-- 虚线章节框
-- 红色强调色
-- 手绘风格装饰元素
-- 适合：轻松有趣的内容、生活类文章、儿童教育
-
-### comic-white（手绘漫画风格 - 白底）⭐ 新增
-- 纯白色背景
-- 手绘波浪边框
-- 虚线章节框
-- 橙色强调色
-- 手绘风格装饰元素
-- 适合：清爽活泼的内容、创意分享、教程指南
-
-## 图标选项
-
-可用的图标名称（在sections中使用）:
-- `brain` - 大脑/思考
-- `rocket` - 火箭/创新
-- `chart` - 图表/数据
-- `shield` - 盾牌/安全
-- `users` - 用户/社群
-- `code` - 代码/开发
-- `globe` - 全球/网络
-- `star` - 星星/优秀
-- `trophy` - 奖杯/成就
-- `target` - 目标/精准
-- `tools` - 工具/效率
-- `lightbulb` - 灯泡/创意
-
-## 最佳实践
-
-### 内容准备
-1. **标题**: 简洁有力，15-30字为佳
-2. **副标题**: 补充说明，不超过60字
-3. **章节**: 建议4-8个章节
-4. **要点**: 每个章节2-4个要点
-5. **页脚**: 标注来源和作者信息
-
-### 中文内容优化
-- 使用简体中文
-- 避免过长的句子（建议30字内）
-- 使用具体数据和案例
-- 保持信息密度平衡
-
-### 英文内容优化
-- 使用简洁的短句
-- 避免复杂术语
-- 使用主动语态
-- 突出关键词
-
-## 输出文件
-
-生成的PNG图片保存在 `./outputs/` 目录：
-- 分辨率: 1080px x 自适应高度
-- 格式: PNG
-- 质量: 95%
-- 命名: 根据标题自动生成
-
-## 技术特性
-
-- **智能文本换行**: 自动处理中英文混排
-- **字体回退机制**: 确保中文正常显示
-- **自适应高度**: 根据内容自动调整
-- **多模板系统**: 易于扩展新风格
-
-## 故障排查
-
-### 中文显示为方框
-确保系统已安装中文字体包（WenQuanYi Zen Hei）
-
-### 文本溢出
-减少每个要点的文字长度，或增加章节数量
-
-### 网页抓取失败
-- 检查URL是否可访问
-- 某些网站可能有反爬虫机制
-- 使用自定义内容模式作为替代方案
-
-## 示例输出
-
-### 中文科技风格
-![中文科技](docs/example-chinese-tech.png)
-
-### 中文商务风格
-![中文商务](docs/example-chinese-business.png)
-
-### 中文创意风格
-![中文创意](docs/example-chinese-creative.png)
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交Issue和Pull Request！
-
----
-
-**Made with ❤️ by HappyCapy Team**
