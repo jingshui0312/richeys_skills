@@ -1,0 +1,11 @@
+#!/bin/bash
+# Obsidian Manager CLI wrapper
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/scripts/obsidian_tool.py"
+
+# Use system python3 (pure stdlib, no dependencies needed)
+PYTHON="python3"
+
+# Execute
+exec $PYTHON "$PYTHON_SCRIPT" "$@"

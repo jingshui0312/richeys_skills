@@ -1,0 +1,19 @@
+{
+  "name": "obsidian-manager",
+  "version": "1.0.0",
+  "description": "Manage Obsidian vault notes via CLI or conversation: create/edit notes, write daily journals, manage Inbox, and full-text search",
+  "author": "richey.li",
+  "commands": [
+    {
+      "name": "obsidian-tool",
+      "description": "CLI tool to manage Obsidian vault notes (daily journal, inbox, CRUD, search)"
+    }
+  ],
+  "dependencies": [
+    "python3"
+  ],
+  "install": {
+    "script": "install.sh"
+  },
+  "tags": ["obsidian", "notes", "journal", "knowledge-base", "productivity", "pkm"]
+}

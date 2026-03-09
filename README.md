@@ -159,6 +159,50 @@ playwright install chromium
 
 ---
 
+### 📓 obsidian-manager
+
+> 对话式管理 Obsidian 知识库——写日记、记想法、搜笔记，全程不离开 Claude
+
+| 属性 | 值 |
+|------|-----|
+| 版本 | `1.0.0` |
+| 语言 | Python（纯标准库） |
+| 触发词 | 写日记 / 记一下 / 搜笔记 / 投到 Inbox / 整理 Inbox |
+| 依赖 | 无（Python 自带） |
+
+**核心能力：**
+
+- 📅 日记管理：自动从模板创建今日日记，追加内容到指定 section
+- 📥 Inbox 快速投递：一句话把想法存入 Inbox，自动命名
+- 📝 笔记 CRUD：创建、读取、编辑、追加 Daily / Inbox / Study / Resource
+- 🔍 全文搜索：标题 + 正文搜索，返回上下文片段
+- ☁️ iCloud 透明同步：文件写入后自动同步到所有设备
+
+**触发示例：**
+
+```
+写日记
+记一下：今天完成了 obsidian-manager 的开发
+把这段话投到 Inbox，先存着
+搜一下关于「异步编程」的笔记
+整理一下 Inbox
+```
+
+**CLI 用法：**
+
+```bash
+TOOL=~/.claude/skills/obsidian-manager/obsidian-tool
+
+$TOOL daily today --create                                        # 创建今日日记
+$TOOL daily today --append "内容" --section "今天发生了什么"       # 追加到 section
+$TOOL inbox --add "一个新想法"                                    # 快速投递 Inbox
+$TOOL inbox --list                                                # 查看 Inbox
+$TOOL search "关键词" --limit 10                                  # 全文搜索
+$TOOL list --folder Daily --recent 7                              # 最近 7 篇日记
+```
+
+---
+
 ### 🦞 openclaw
 
 > 敬请期待...
@@ -175,6 +219,7 @@ cd richeys_skills
 # 安装指定 skill
 cd web-infographic-generator && bash install.sh
 cd youtube-infographic && bash install.sh
+cd obsidian-manager && bash install.sh
 ```
 
 或者直接复制到 Claude Skills 目录：
@@ -183,6 +228,7 @@ cd youtube-infographic && bash install.sh
 cp -r web-infographic-generator ~/.claude/skills/
 cp -r youtube-infographic ~/.claude/skills/
 cp -r xiaohongshu-browser ~/.claude/skills/
+cp -r obsidian-manager ~/.claude/skills/
 ```
 
 ---
@@ -211,6 +257,14 @@ richeys_skills/
 │   ├── SKILL.md                 # Claude 使用说明
 │   └── scripts/
 │       └── xhs_session.py       # Playwright 会话管理
+├── obsidian-manager/            # Obsidian 知识库管理器
+│   ├── skill.json               # Skill 元数据
+│   ├── SKILL.md                 # Claude 使用说明
+│   ├── obsidian-tool            # CLI 入口
+│   ├── install.sh               # 安装脚本
+│   ├── README.md                # 详细使用文档
+│   └── scripts/
+│       └── obsidian_tool.py     # 核心实现（纯标准库）
 └── openclaw/                    # 🚧 建设中
 ```
 
