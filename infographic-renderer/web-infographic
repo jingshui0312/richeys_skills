@@ -1,0 +1,27 @@
+#!/bin/bash
+# Web Infographic Generator v2 CLI wrapper
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/scripts/web_infographic.py"
+VENV_PYTHON="$SCRIPT_DIR/.venv/bin/python3"
+
+# Use venv python if available, otherwise system python3
+if [ -x "$VENV_PYTHON" ]; then
+    PYTHON="$VENV_PYTHON"
+else
+    PYTHON="python3"
+    # Check Python dependencies
+    if ! $PYTHON -c "import requests, bs4" 2>/dev/null; then
+        echo "Installing Python dependencies..." >&2
+        pip install -q --break-system-packages requests beautifulsoup4 lxml 2>&1 | grep -v "externally-managed" || true
+    fi
+fi
+
+# Set Playwright browser path
+export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/Library/Caches/ms-playwright}"
+
+# Set NODE_PATH to skill's node_modules
+export NODE_PATH="$SCRIPT_DIR/node_modules:${NODE_PATH:-}"
+
+# Execute
+$PYTHON "$PYTHON_SCRIPT" "$@"

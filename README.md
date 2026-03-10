@@ -81,6 +81,39 @@ export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
 
 ---
 
+### 🖼️ infographic-renderer
+
+> 将结构化内容 JSON 渲染为专业信息长图——可独立使用，也可被其他 skill 调用
+
+| 属性 | 值 |
+|------|-----|
+| 版本 | `1.0.0` |
+| 语言 | Python + Node.js |
+| 作者 | HappyCapy |
+| 风格 | 36氪 / 极客公园 / 少数派 |
+
+**核心能力：**
+
+- 📄 输入结构化 JSON → 输出专业信息长图（PNG），纯渲染，不含抓取
+- 🧱 11 种内容 Block：段落、洞察、步骤卡、对比栏、数据展示、引用等
+- 🎨 780px 精确排版，绿色设计风格，完美适配移动端分享
+- 🤖 无 CLI 环境时，Agent 直接生成 HTML artifact（Path 2）
+- 🔌 作为渲染底层供 web-infographic-generator / youtube-infographic 调用
+
+**快速体验：**
+
+```bash
+# 从 JSON 内容生成长图
+web-infographic create --content content.json --output ~/info_graph/result.png
+
+# 仅生成 HTML（预览/调试）
+web-infographic html --content content.json --output result.html
+```
+
+> 适合在不需要网页抓取能力的平台上单独安装，也是最小可用的信息长图渲染单元。
+
+---
+
 ### 🎬 youtube-infographic
 
 > 把任意 YouTube 视频变成一张专业信息长图
@@ -220,6 +253,7 @@ cd richeys_skills
 cd web-infographic-generator && bash install.sh
 cd youtube-infographic && bash install.sh
 cd obsidian-manager && bash install.sh
+cd infographic-renderer && bash install.sh
 ```
 
 或者直接复制到 Claude Skills 目录：
@@ -229,6 +263,7 @@ cp -r web-infographic-generator ~/.claude/skills/
 cp -r youtube-infographic ~/.claude/skills/
 cp -r xiaohongshu-browser ~/.claude/skills/
 cp -r obsidian-manager ~/.claude/skills/
+cp -r infographic-renderer ~/.claude/skills/
 ```
 
 ---
@@ -245,6 +280,15 @@ richeys_skills/
 │   ├── requirements.txt         # Python 依赖
 │   └── scripts/
 │       ├── web_infographic.py   # 主程序
+│       └── screenshot.mjs       # Playwright 截图引擎
+├── infographic-renderer/        # 信息长图渲染器（纯渲染，无抓取）
+│   ├── skill.json               # Skill 元数据
+│   ├── SKILL.md                 # Claude 使用说明（含 YAML frontmatter）
+│   ├── web-infographic          # CLI 入口
+│   ├── install.sh               # 安装脚本
+│   ├── requirements.txt         # Python 依赖
+│   └── scripts/
+│       ├── web_infographic.py   # HTML 生成引擎
 │       └── screenshot.mjs       # Playwright 截图引擎
 ├── youtube-infographic/         # YouTube 视频信息长图生成器
 │   ├── skill.json               # Skill 元数据
