@@ -1,0 +1,14 @@
+{
+  "name": "github-manager",
+  "version": "1.0.0",
+  "description": "Operate GitHub repositories using the gh CLI. Supports viewing repo info, browsing files, managing Issues and Pull Requests.",
+  "author": "richey.li",
+  "commands": [],
+  "dependencies": [
+    "gh"
+  ],
+  "install": {
+    "script": "install.sh"
+  },
+  "tags": ["github", "git", "issues", "pull-requests", "repository", "gh-cli"]
+}
