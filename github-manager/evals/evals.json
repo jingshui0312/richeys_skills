@@ -1,0 +1,81 @@
+{
+  "skill_name": "github-manager",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我查看一下 anthropics/anthropic-sdk-python 这个 GitHub 仓库的基本信息，比如 stars 数、描述、主要语言、最近的活跃情况",
+      "expected_output": "使用 gh CLI 查询仓库信息，展示仓库的描述、stars 数量、forks 数量、主要编程语言、创建时间、最后更新时间等关键信息",
+      "files": [],
+      "assertions": [
+        {
+          "name": "includes-description",
+          "description": "输出中包含仓库的文字描述（非空）"
+        },
+        {
+          "name": "includes-stars-count",
+          "description": "输出包含 stars 相关数字（大于 0 的整数）"
+        },
+        {
+          "name": "shows-language",
+          "description": "输出明确提到 Python 作为主要编程语言"
+        },
+        {
+          "name": "uses-gh-command",
+          "description": "执行了 gh CLI 命令（输出中有 gh 命令或其结果格式）"
+        },
+        {
+          "name": "no-raw-json-dump",
+          "description": "输出是友好格式（有标签/标题），而非原始 JSON blob"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我想看看 https://github.com/openai/openai-python 仓库的根目录有哪些文件和文件夹，然后帮我读取一下 README.md 的内容",
+      "expected_output": "先列出仓库根目录的文件列表（区分文件和目录），然后读取并展示 README.md 的实际内容（Base64 解码后）",
+      "files": [],
+      "assertions": [
+        {
+          "name": "lists-root-files",
+          "description": "输出列出了仓库根目录的文件/文件夹名称"
+        },
+        {
+          "name": "distinguishes-type",
+          "description": "区分了 file 和 directory（或用符号/标签区分）"
+        },
+        {
+          "name": "readme-decoded",
+          "description": "README.md 内容已解码，不是 base64 字符串（不含大量 A-Za-z0-9+/ 连续字符）"
+        },
+        {
+          "name": "readme-has-content",
+          "description": "README.md 显示了有意义的可读文字（如项目名称、安装说明等）"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我在 microsoft/vscode 仓库里列出最近 5 个 open 的 Issues，我想看看大家在反馈什么问题",
+      "expected_output": "使用 gh issue list 命令列出最近的 open issues，展示 issue 编号、标题、创建时间、标签等信息",
+      "files": [],
+      "assertions": [
+        {
+          "name": "shows-5-issues",
+          "description": "展示了至少 5 个 issue 条目"
+        },
+        {
+          "name": "shows-issue-numbers",
+          "description": "包含 issue 编号（#数字 格式）"
+        },
+        {
+          "name": "shows-issue-titles",
+          "description": "每个 issue 有描述性标题文字"
+        },
+        {
+          "name": "issues-are-open",
+          "description": "列出的 issue 均为 open 状态（或输出未显示 closed 状态）"
+        }
+      ]
+    }
+  ]
+}
