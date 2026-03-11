@@ -13,13 +13,22 @@ else
     exit 1
 fi
 
-# Check authentication status
-if gh auth status &>/dev/null; then
-    echo "✓ GitHub authentication: already logged in"
+# Check authentication: GITHUB_TOKEN takes priority, then gh auth login
+if [ -n "$GITHUB_TOKEN" ]; then
+    echo "✓ GitHub authentication: GITHUB_TOKEN is set"
+elif gh auth status &>/dev/null; then
+    echo "✓ GitHub authentication: gh auth login detected"
 else
-    echo "⚠ GitHub not authenticated. Set your token before use:"
-    echo "  export GITHUB_TOKEN=your_token_here"
-    echo "  Or run: gh auth login"
+    echo "⚠ GitHub not authenticated. Choose one of the following:"
+    echo ""
+    echo "  Option 1 — Set a Personal Access Token (PAT):"
+    echo "    export GITHUB_TOKEN=your_token_here"
+    echo "    # To persist, add the above line to ~/.zshrc or ~/.bashrc"
+    echo ""
+    echo "  Option 2 — Interactive login via gh CLI:"
+    echo "    gh auth login"
+    echo ""
+    echo "  Get a token at: https://github.com/settings/tokens"
 fi
 
 echo ""
