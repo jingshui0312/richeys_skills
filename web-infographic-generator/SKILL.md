@@ -2,7 +2,9 @@
 
 深度分析网页内容并生成专业级编辑水平的信息长图，对齐36氪、极客公园、少数派专栏的品质。
 
-Use this skill whenever the user asks to: generate an infographic, create a long-form image from a URL, analyze web content visually, produce 信息长图, or any task involving converting web articles into professional visual summaries.
+**Scope: URL input only — NOT for directly provided text.**
+
+Use this skill when the user provides a URL (http/https link) to a web page, article, blog post, or any online content that should be fetched and turned into an infographic. Do NOT use this skill when the user pastes content directly — use `infographic-renderer` instead.
 
 ## Workflow — Choose a Path Based on Available Tools
 

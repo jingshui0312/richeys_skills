@@ -13,7 +13,9 @@ tags:
 
 将结构化内容 JSON 渲染为专业级信息长图（PNG），品质对标 36氪、极客公园、少数派专栏。
 
-Use this skill whenever the user asks to: generate an infographic from content, create a long-form image, render a visual summary, produce 信息长图, or convert structured content into a professional image.
+**Scope: direct content input only — NOT for URLs.**
+
+Use this skill when the user provides content directly: pasted article text, a transcript, a document, notes, or any in-conversation text that should be turned into an infographic. Do NOT use this skill when the user provides a URL — use `web-infographic-generator` instead.
 
 ## Workflow — Choose a Path Based on Available Tools
 

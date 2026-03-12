@@ -1,7 +1,7 @@
 {
   "name": "infographic-renderer",
   "version": "1.0.0",
-  "description": "Generate professional long-form infographic images from structured JSON content. Matches the editorial quality of 36kr, GeekPark, and SSPAI.",
+  "description": "Generate professional long-form infographic images from directly provided content (pasted text, transcripts, documents). Use when the user supplies content in-conversation — NOT for URLs.",
   "author": "HappyCapy",
   "commands": [
     {

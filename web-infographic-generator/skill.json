@@ -1,7 +1,7 @@
 {
   "name": "web-infographic-generator",
   "version": "1.0.0",
-  "description": "Generate professional long-form informational images (infographics) from web content with the quality of professional editors and tech KOLs",
+  "description": "Fetch a URL and generate a professional long-form infographic from the web page content. Use when the user provides a URL — NOT for directly pasted text.",
   "author": "HappyCapy",
   "commands": [
     {
