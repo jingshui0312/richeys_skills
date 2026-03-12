@@ -236,6 +236,40 @@ $TOOL list --folder Daily --recent 7                              # 最近 7 篇
 
 ---
 
+### 🎬 youtube-subtitle-collage
+
+> 从 YouTube 视频提取真实字幕，截取对应视频帧，叠加中文大字，拼成长图
+
+| 属性 | 值 |
+|------|-----|
+| 版本 | `2.0.0` |
+| 语言 | Python + Pillow |
+| 作者 | HappyCapy |
+
+**核心能力：**
+
+- 🎞️ 输入 YouTube URL → 自动提取字幕 + 截取真实视频帧（无需下载视频）
+- 🎯 支持主题引导选片：输入"截出人生启发相关的内容"，Claude 按主题筛选金句
+- 🖼️ 第一张保留完整 16:9 视频帧，后续条带紧凑拼接，字幕叠加于底部
+- 📡 利用 YouTube Storyboard 技术，直接从 CDN 获取缩略图，无 IP 封锁问题
+- 🀄 原生中文支持，PingFang / Noto Sans CJK 字体自动检测
+
+**触发示例：**
+
+```
+帮我把这个视频做成字幕拼接图：https://www.youtube.com/watch?v=xxxxx
+截出这个视频里关于「创业失败」的内容：https://youtu.be/xxxxx
+```
+
+**依赖安装：**
+
+```bash
+cd youtube-subtitle-collage && bash install.sh
+# 依赖：python3, yt-dlp, Pillow, Chrome（cookies 认证）
+```
+
+---
+
 ### 🦞 openclaw
 
 > 敬请期待...
@@ -252,6 +286,7 @@ cd richeys_skills
 # 安装指定 skill
 cd web-infographic-generator && bash install.sh
 cd youtube-infographic && bash install.sh
+cd youtube-subtitle-collage && bash install.sh
 cd obsidian-manager && bash install.sh
 cd infographic-renderer && bash install.sh
 ```
@@ -261,6 +296,7 @@ cd infographic-renderer && bash install.sh
 ```bash
 cp -r web-infographic-generator ~/.claude/skills/
 cp -r youtube-infographic ~/.claude/skills/
+cp -r youtube-subtitle-collage ~/.claude/skills/
 cp -r xiaohongshu-browser ~/.claude/skills/
 cp -r obsidian-manager ~/.claude/skills/
 cp -r infographic-renderer ~/.claude/skills/
@@ -283,7 +319,7 @@ richeys_skills/
 │       └── screenshot.mjs       # Playwright 截图引擎
 ├── infographic-renderer/        # 信息长图渲染器（纯渲染，无抓取）
 │   ├── skill.json               # Skill 元数据
-│   ├── SKILL.md                 # Claude 使用说明（含 YAML frontmatter）
+│   ├── SKILL.md                 # Claude 使用说明
 │   ├── web-infographic          # CLI 入口
 │   ├── install.sh               # 安装脚本
 │   ├── requirements.txt         # Python 依赖
@@ -297,6 +333,14 @@ richeys_skills/
 │   ├── install.sh               # 安装脚本
 │   └── scripts/
 │       └── youtube_extract.py   # YouTube 内容提取器
+├── youtube-subtitle-collage/    # YouTube 字幕拼接图生成器
+│   ├── skill.json               # Skill 元数据
+│   ├── SKILL.md                 # Claude 使用说明
+│   ├── youtube-subtitle-collage # CLI 入口
+│   ├── install.sh               # 安装脚本
+│   └── scripts/
+│       ├── extract_segments.py  # 字幕提取（均匀采样全视频）
+│       └── render_frames.py     # Storyboard 截帧 + Pillow 合成
 ├── xiaohongshu-browser/         # 小红书浏览器
 │   ├── SKILL.md                 # Claude 使用说明
 │   └── scripts/
