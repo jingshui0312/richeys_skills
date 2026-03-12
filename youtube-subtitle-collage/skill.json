@@ -1,0 +1,22 @@
+{
+  "name": "youtube-subtitle-collage",
+  "version": "1.0.0",
+  "description": "Generate a dark-themed subtitle collage image from a YouTube video — preserves actual spoken words as timestamped quote cards. Use when the user wants to make a 字幕拼接图 or show real quotes from a video.",
+  "author": "HappyCapy",
+  "commands": [
+    {
+      "name": "youtube-subtitle-collage",
+      "description": "Extract subtitle segments from YouTube and render them as a visual quote collage"
+    }
+  ],
+  "dependencies": [
+    "python3",
+    "youtube-transcript-api",
+    "yt-dlp",
+    "nodejs"
+  ],
+  "install": {
+    "script": "install.sh"
+  },
+  "tags": ["youtube", "subtitle", "collage", "quotes", "字幕拼接图", "image-generation"]
+}

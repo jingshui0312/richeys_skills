@@ -1,0 +1,45 @@
+#!/bin/bash
+# YouTube Subtitle Collage CLI
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON="python3"
+
+# Ensure youtube-transcript-api is installed
+if ! $PYTHON -c "import youtube_transcript_api" 2>/dev/null; then
+    echo "Installing youtube-transcript-api..." >&2
+    $PYTHON -m pip install -q --break-system-packages youtube-transcript-api 2>/dev/null || \
+    $PYTHON -m pip install -q youtube-transcript-api 2>/dev/null || true
+fi
+
+CMD="${1:-}"
+shift 2>/dev/null || true
+
+case "$CMD" in
+  extract)
+    $PYTHON "$SCRIPT_DIR/scripts/extract_segments.py" "$@"
+    ;;
+  create)
+    $PYTHON "$SCRIPT_DIR/scripts/render_collage.py" create "$@"
+    ;;
+  html)
+    $PYTHON "$SCRIPT_DIR/scripts/render_collage.py" html "$@"
+    ;;
+  *)
+    echo "YouTube Subtitle Collage Generator"
+    echo ""
+    echo "Usage: youtube-subtitle-collage <command> [options]"
+    echo ""
+    echo "Commands:"
+    echo "  extract <url> [--output path.json] [--max-segments N]"
+    echo "      Extract timestamped subtitle segments from a YouTube video"
+    echo ""
+    echo "  create --content path.json [--output path.png]"
+    echo "      Render collage JSON to a PNG image"
+    echo ""
+    echo "  html --content path.json [--output path.html]"
+    echo "      Generate HTML only (for preview/debugging)"
+    echo ""
+    echo "Output: ~/info_graph/youtube-subtitle-collage.png (default)"
+    exit 1
+    ;;
+esac
