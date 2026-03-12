@@ -35,18 +35,15 @@ python3 <skill-path>/scripts/xhs_session.py check
 
 ### 第二步：二维码登录
 
-> **重要**：登录脚本会一直运行直到检测到登录成功，必须在后台运行，同时 Claude 展示二维码。
+> **重要**：登录脚本需要在后台运行，同时轮询状态展示二维码。使用 shell `&` 后台运行（兼容所有 AI 驱动环境）。
 
-**2a. 后台启动登录（使用 `run_in_background=True`）：**
-
-```bash
-python3 <skill-path>/scripts/xhs_session.py login
-```
-
-**2b. 等待二维码就绪（轮询状态文件）：**
+**2a. 后台启动登录 + 等待二维码就绪（一条命令完成）：**
 
 ```bash
-# 每隔 2 秒检查一次，直到状态变为 qr_ready
+# 清理旧状态文件，后台启动登录脚本，等待二维码就绪
+rm -f /tmp/xhs_login_status.json /tmp/xhs_qrcode.png
+python3 <skill-path>/scripts/xhs_session.py login > /tmp/xhs_login.log 2>&1 &
+echo $! > /tmp/xhs_login.pid
 python3 -c "
 import json, time, sys
 for _ in range(30):
@@ -57,19 +54,18 @@ for _ in range(30):
             sys.exit(0)
     except: pass
     time.sleep(2)
-print('timeout waiting for status')
+print('timeout waiting for qr_ready')
 sys.exit(1)
 "
 ```
 
-**2c. 展示二维码给用户：**
+**2b. 展示二维码给用户：**
 
-当状态为 `qr_ready` 时，使用 **Read 工具**读取并展示图片：
+当上一步状态为 `qr_ready` 时，使用 **Read 工具**读取并展示图片：
 - 图片路径：`/tmp/xhs_qrcode.png`
 - 告诉用户：**"请打开小红书 App，点击右上角扫一扫，扫描上方二维码完成登录"**
-- 浏览器窗口也会同时打开，二维码显示在其中，以防截图不清晰
 
-**2d. 轮询等待登录完成：**
+**2c. 轮询等待登录完成：**
 
 ```bash
 python3 -c "
@@ -78,22 +74,23 @@ for _ in range(60):
     try:
         d = json.loads(open('/tmp/xhs_login_status.json').read())
         status = d.get('status', '')
-        print(f'状态: {status} - {d.get(\"message\",\"\")}', flush=True)
+        print(f'状态: {status}', flush=True)
         if status == 'logged_in':
             print('登录成功！')
             sys.exit(0)
         if status in ('error', 'timeout'):
             print('登录失败:', d.get('message'))
             sys.exit(1)
+        # qr_ready 说明还在等待扫码，继续等待，不要重启登录流程
     except: pass
-    time.sleep(2)
+    time.sleep(3)
 print('等待超时')
 sys.exit(1)
 "
 ```
 
-> **二维码刷新**：脚本每 30 秒自动重新截取二维码，状态会重置为 `qr_ready`。
-> 若用户说二维码过期，重新用 Read 工具读取 `/tmp/xhs_qrcode.png` 即可展示最新二维码。
+> **注意**：看到 `qr_ready` 状态时**不要重启登录**，这是正常的等待扫码状态（二维码每 30 秒自动刷新）。
+> 若用户说二维码过期，重新用 Read 工具读取 `/tmp/xhs_qrcode.png` 展示最新二维码即可。
 
 ### 第三步：浏览页面
 
@@ -169,7 +166,7 @@ python3 <skill-path>/scripts/xhs_session.py browse \
 ## 常见问题处理
 
 **二维码截图不清晰 / 找不到二维码元素**
-→ 浏览器窗口是有头模式，用户可以直接在弹出的浏览器窗口中扫码，无需依赖截图
+→ 重新运行步骤 2a，或直接读取 `/tmp/xhs_qrcode.png` 检查是否已更新（脚本每 30 秒刷新）
 
 **登录超时（120秒内未扫码）**
 → 重新运行 `login` 命令

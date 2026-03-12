@@ -117,29 +117,37 @@ def _add_padding(img_path: Path, padding: int = 20):
 
 
 async def is_logged_in(page) -> bool:
-    """检测是否已登录（二维码弹窗消失 + Cookie 或用户元素出现）"""
+    """检测是否已登录。
+
+    优先使用 Playwright Cookie API（最可靠，可读取 HttpOnly Cookie），
+    然后检查 URL 变化，最后回退到 DOM 检测。
+    """
     try:
+        # 1. 通过 Playwright context 读取 Cookie（包括 HttpOnly）
+        cookies = await page.context.cookies()
+        auth_cookies = {"web_session", "customer-sso-sid", "xsecappid", "a1"}
+        for c in cookies:
+            if c.get("name") in auth_cookies and c.get("value"):
+                return True
+
+        # 2. URL 已跳转离开登录页（扫码成功后小红书会重定向）
+        current_url = page.url
+        if "login" not in current_url and "xiaohongshu.com" in current_url:
+            # 确认登录弹窗不在了
+            login_modal_visible = await page.evaluate("""() => {
+                const modal = document.querySelector(
+                    '.login-container, .login-wrapper, [class*="loginModal"], ' +
+                    '[class*="login-modal"], .qrcode-container'
+                );
+                return !!(modal && modal.getBoundingClientRect().height > 0);
+            }""")
+            if not login_modal_visible:
+                return True
+
+        # 3. 检查用户头像等登录态 DOM 元素
         result = await page.evaluate("""() => {
-            // 登录弹窗消失是最可靠的信号
-            const loginModal = document.querySelector(
-                '.login-container, .login-wrapper, [class*="loginModal"], ' +
-                '[class*="login-modal"], .qrcode-container'
-            );
-            if (loginModal && loginModal.getBoundingClientRect().height > 0) {
-                // 弹窗还在，说明还没登录
-                return false;
-            }
-
-            // 检查登录 Cookie（HttpOnly Cookie 在 JS 里看不到，但部分可以）
-            if (document.cookie.includes('web_session') ||
-                document.cookie.includes('customer-sso-sid') ||
-                document.cookie.includes('xsecappid')) {
-                return true;
-            }
-
-            // 检查用户头像等登录态 DOM 元素
             const loggedInSelectors = [
-                '.user-info', '.avatar', '[class*="userAvatar"]',
+                '.user-info', '[class*="userAvatar"]',
                 '[class*="user-avatar"]', 'a[href*="/user/profile"]',
                 '.side-bar .user', '[data-type="me"]',
             ];
