@@ -175,7 +175,13 @@ def main():
     meta = get_video_metadata(video_id)
     segment_data = get_segments(video_id)
 
-    segments = segment_data['segments'][:args.max_segments]
+    all_segs = segment_data['segments']
+    if len(all_segs) <= args.max_segments:
+        segments = all_segs
+    else:
+        # Uniform sampling across full video
+        step = len(all_segs) / args.max_segments
+        segments = [all_segs[int(i * step)] for i in range(args.max_segments)]
 
     result = {
         'video_id': video_id,

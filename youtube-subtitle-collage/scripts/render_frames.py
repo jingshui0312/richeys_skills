@@ -35,7 +35,7 @@ SUB_PAD_X     = 28
 SUB_PAD_Y     = 14
 SUB_BG_ALPHA  = 185
 SUB_BOTTOM    = 22
-MAX_LINE_CHARS = 22
+MAX_LINE_CHARS = 16
 
 
 def find_chinese_font(size: int):
@@ -238,7 +238,7 @@ def make_strip(frame: Image.Image | None, text: str,
     block_h     = len(lines) * line_h + max(0, len(lines) - 1) * line_spacing
     max_line_w  = max((w for w, _ in line_sizes), default=0)
 
-    bar_w = max_line_w + SUB_PAD_X * 2
+    bar_w = min(max_line_w + SUB_PAD_X * 2, STRIP_WIDTH - 20)
     bar_h = block_h + SUB_PAD_Y * 2
     bar_x = max(10, (STRIP_WIDTH - bar_w) // 2)
     bar_y = max(4, strip_h - bar_h - SUB_BOTTOM)
