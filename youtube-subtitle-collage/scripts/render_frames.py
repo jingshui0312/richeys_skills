@@ -186,8 +186,11 @@ def wrap_text(text: str, max_chars: int) -> list[str]:
 
 def make_strip(frame: Image.Image | None, text: str,
                timestamp: str, highlight: bool,
-               font_main, font_ts) -> Image.Image:
-    """Build a STRIP_WIDTH × STRIP_HEIGHT strip with subtitle overlay."""
+               font_main, font_ts) -> tuple:
+    """
+    Build a STRIP_WIDTH × STRIP_HEIGHT strip with subtitle overlay.
+    Returns (image, subtitle_y) where subtitle_y is the top of the subtitle bar.
+    """
 
     # ── Background ────────────────────────────────────────────────────────────
     if frame is not None:
@@ -271,7 +274,7 @@ def make_strip(frame: Image.Image | None, text: str,
             outline=(255, 30, 30, 255), width=5,
         )
 
-    return strip.convert('RGB')
+    return strip.convert('RGB'), bar_y
 
 
 # ── Main render ───────────────────────────────────────────────────────────────
@@ -305,16 +308,24 @@ def render_collage(data: dict, output_path: str):
             if frame is None:
                 print(f"           ↳ fallback", file=sys.stderr)
 
-        strip = make_strip(frame, text, ts, highlight, font_main, font_ts)
-        strips.append(strip)
+        strip, sub_y = make_strip(frame, text, ts, highlight, font_main, font_ts)
+        strips.append((strip, sub_y))
 
-    # Stack all strips
-    total_h = len(strips) * STRIP_HEIGHT + max(0, len(strips) - 1) * GAP
+    # Stack strips: first strip full height; subsequent strips cropped from subtitle bar down
+    strip_heights = []
+    for i, (s, sub_y) in enumerate(strips):
+        strip_heights.append(STRIP_HEIGHT if i == 0 else STRIP_HEIGHT - sub_y)
+
+    total_h = sum(strip_heights) + max(0, len(strips) - 1) * GAP
     collage = Image.new('RGB', (STRIP_WIDTH, total_h), (255, 255, 255))
     y = 0
-    for s in strips:
-        collage.paste(s, (0, y))
-        y += STRIP_HEIGHT + GAP
+    for i, (s, sub_y) in enumerate(strips):
+        if i == 0:
+            collage.paste(s, (0, y))
+        else:
+            cropped = s.crop((0, sub_y, STRIP_WIDTH, STRIP_HEIGHT))
+            collage.paste(cropped, (0, y))
+        y += strip_heights[i] + GAP
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     collage.save(output_path, 'PNG', optimize=True)
