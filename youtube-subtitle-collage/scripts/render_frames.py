@@ -186,10 +186,12 @@ def wrap_text(text: str, max_chars: int) -> list[str]:
 
 def make_strip(frame: Image.Image | None, text: str,
                timestamp: str, highlight: bool,
-               font_main, font_ts) -> tuple:
+               font_main, font_ts, full_frame: bool = False) -> tuple:
     """
-    Build a STRIP_WIDTH × STRIP_HEIGHT strip with subtitle overlay.
-    Returns (image, subtitle_y) where subtitle_y is the top of the subtitle bar.
+    Build a STRIP_WIDTH × strip_h strip with subtitle overlay.
+    full_frame=True: show the entire video frame at natural height (16:9 → ~506px).
+    full_frame=False: crop to lower 60% at STRIP_HEIGHT (240px).
+    Returns (image, subtitle_y).
     """
 
     # ── Background ────────────────────────────────────────────────────────────
@@ -198,21 +200,27 @@ def make_strip(frame: Image.Image | None, text: str,
         scale = STRIP_WIDTH / w
         new_h = int(h * scale)
         img = frame.resize((STRIP_WIDTH, new_h), Image.LANCZOS)
-        # Crop: lower 60% of frame (subtitle zone + scene context)
-        crop_start = int(new_h * 0.40)
-        crop_end = crop_start + STRIP_HEIGHT
-        if crop_end > new_h:
-            crop_start = max(0, new_h - STRIP_HEIGHT)
-            crop_end = new_h
-        strip = img.crop((0, crop_start, STRIP_WIDTH, min(crop_end, new_h)))
-        if strip.size[1] < STRIP_HEIGHT:
-            bg = Image.new('RGB', (STRIP_WIDTH, STRIP_HEIGHT), (15, 15, 15))
-            bg.paste(strip, (0, 0))
-            strip = bg
+        if full_frame:
+            strip = img.copy()
+            strip_h = new_h
         else:
-            strip = strip.resize((STRIP_WIDTH, STRIP_HEIGHT), Image.LANCZOS)
+            # Crop: lower 60% of frame (subtitle zone + scene context)
+            crop_start = int(new_h * 0.40)
+            crop_end = crop_start + STRIP_HEIGHT
+            if crop_end > new_h:
+                crop_start = max(0, new_h - STRIP_HEIGHT)
+                crop_end = new_h
+            strip = img.crop((0, crop_start, STRIP_WIDTH, min(crop_end, new_h)))
+            if strip.size[1] < STRIP_HEIGHT:
+                bg = Image.new('RGB', (STRIP_WIDTH, STRIP_HEIGHT), (15, 15, 15))
+                bg.paste(strip, (0, 0))
+                strip = bg
+            else:
+                strip = strip.resize((STRIP_WIDTH, STRIP_HEIGHT), Image.LANCZOS)
+            strip_h = STRIP_HEIGHT
     else:
-        strip = Image.new('RGB', (STRIP_WIDTH, STRIP_HEIGHT), (20, 20, 20))
+        strip_h = STRIP_HEIGHT
+        strip = Image.new('RGB', (STRIP_WIDTH, strip_h), (20, 20, 20))
 
     strip = strip.convert('RGBA')
 
@@ -233,10 +241,10 @@ def make_strip(frame: Image.Image | None, text: str,
     bar_w = max_line_w + SUB_PAD_X * 2
     bar_h = block_h + SUB_PAD_Y * 2
     bar_x = max(10, (STRIP_WIDTH - bar_w) // 2)
-    bar_y = max(4, STRIP_HEIGHT - bar_h - SUB_BOTTOM)
+    bar_y = max(4, strip_h - bar_h - SUB_BOTTOM)
 
     # Semi-transparent subtitle background
-    overlay = Image.new('RGBA', (STRIP_WIDTH, STRIP_HEIGHT), (0, 0, 0, 0))
+    overlay = Image.new('RGBA', (STRIP_WIDTH, strip_h), (0, 0, 0, 0))
     ov = ImageDraw.Draw(overlay)
     ov.rounded_rectangle(
         [bar_x, bar_y, bar_x + bar_w, bar_y + bar_h],
@@ -258,7 +266,7 @@ def make_strip(frame: Image.Image | None, text: str,
         ts_label = f'▶ {timestamp}'
         tsw, tsh = measure(ts_label, font_ts)
         pad = 6
-        ts_ov = Image.new('RGBA', (STRIP_WIDTH, STRIP_HEIGHT), (0, 0, 0, 0))
+        ts_ov = Image.new('RGBA', (STRIP_WIDTH, strip_h), (0, 0, 0, 0))
         ImageDraw.Draw(ts_ov).rounded_rectangle(
             [14, 14, 14 + tsw + pad * 2, 14 + tsh + pad * 2],
             radius=4, fill=(210, 0, 0, 220),
@@ -270,7 +278,7 @@ def make_strip(frame: Image.Image | None, text: str,
     # ── Highlight border ──────────────────────────────────────────────────────
     if highlight:
         ImageDraw.Draw(strip).rectangle(
-            [0, 0, STRIP_WIDTH - 1, STRIP_HEIGHT - 1],
+            [0, 0, STRIP_WIDTH - 1, strip_h - 1],
             outline=(255, 30, 30, 255), width=5,
         )
 
@@ -308,13 +316,14 @@ def render_collage(data: dict, output_path: str):
             if frame is None:
                 print(f"           ↳ fallback", file=sys.stderr)
 
-        strip, sub_y = make_strip(frame, text, ts, highlight, font_main, font_ts)
+        strip, sub_y = make_strip(frame, text, ts, highlight, font_main, font_ts,
+                                   full_frame=(i == 0))
         strips.append((strip, sub_y))
 
-    # Stack strips: first strip full height; subsequent strips cropped from subtitle bar down
+    # Stack strips: first strip at full natural height; subsequent strips cropped from subtitle bar down
     strip_heights = []
     for i, (s, sub_y) in enumerate(strips):
-        strip_heights.append(STRIP_HEIGHT if i == 0 else STRIP_HEIGHT - sub_y)
+        strip_heights.append(s.size[1] if i == 0 else STRIP_HEIGHT - sub_y)
 
     total_h = sum(strip_heights) + max(0, len(strips) - 1) * GAP
     collage = Image.new('RGB', (STRIP_WIDTH, total_h), (255, 255, 255))
