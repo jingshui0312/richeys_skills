@@ -4,11 +4,21 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PYTHON="python3"
 
+# Disable glob expansion so URLs with ? are passed as-is
+set -f
+
 # Ensure youtube-transcript-api is installed
 if ! $PYTHON -c "import youtube_transcript_api" 2>/dev/null; then
     echo "Installing youtube-transcript-api..." >&2
     $PYTHON -m pip install -q --break-system-packages youtube-transcript-api 2>/dev/null || \
     $PYTHON -m pip install -q youtube-transcript-api 2>/dev/null || true
+fi
+
+# Ensure Pillow is installed (needed for frame-based rendering)
+if ! $PYTHON -c "import PIL" 2>/dev/null; then
+    echo "Installing Pillow..." >&2
+    $PYTHON -m pip install -q --break-system-packages Pillow 2>/dev/null || \
+    $PYTHON -m pip install -q Pillow 2>/dev/null || true
 fi
 
 CMD="${1:-}"
@@ -19,9 +29,11 @@ case "$CMD" in
     $PYTHON "$SCRIPT_DIR/scripts/extract_segments.py" "$@"
     ;;
   create)
-    $PYTHON "$SCRIPT_DIR/scripts/render_collage.py" create "$@"
+    # v2: video-frame collage using Pillow + ffmpeg
+    $PYTHON "$SCRIPT_DIR/scripts/render_frames.py" "$@"
     ;;
   html)
+    # legacy: HTML/Playwright card layout (fallback when ffmpeg unavailable)
     $PYTHON "$SCRIPT_DIR/scripts/render_collage.py" html "$@"
     ;;
   *)
@@ -34,10 +46,10 @@ case "$CMD" in
     echo "      Extract timestamped subtitle segments from a YouTube video"
     echo ""
     echo "  create --content path.json [--output path.png]"
-    echo "      Render collage JSON to a PNG image"
+    echo "      Render video-frame collage (requires ffmpeg + yt-dlp with cookies)"
     echo ""
     echo "  html --content path.json [--output path.html]"
-    echo "      Generate HTML only (for preview/debugging)"
+    echo "      Generate HTML card layout (legacy fallback, no ffmpeg needed)"
     echo ""
     echo "Output: ~/info_graph/youtube-subtitle-collage.png (default)"
     exit 1

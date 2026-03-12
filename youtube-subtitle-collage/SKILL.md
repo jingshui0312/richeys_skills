@@ -1,7 +1,7 @@
 ---
 name: youtube-subtitle-collage
-version: 1.0.0
-description: Generate a dark-themed subtitle collage image (字幕拼接图) from a YouTube video — preserves actual spoken words as timestamped quote cards.
+version: 2.0.0
+description: Generate a subtitle collage image (字幕拼接图) from a YouTube video — real video frames with Chinese subtitle text overlaid, stacked into a tall PNG.
 author: HappyCapy
 tags:
   - youtube
@@ -13,15 +13,17 @@ tags:
 
 # YouTube 字幕拼接图 / YouTube Subtitle Collage
 
-从 YouTube 视频中提取真实字幕，挑选最有价值的片段，生成深色风格的字幕拼接图（PNG）。
+从 YouTube 视频中提取真实字幕，挑选精彩片段，截取对应视频帧，叠加中文字幕大字，纵向拼接成长图。
+
+**输出效果**：每条字幕 = 一帧视频截图（横向裁剪条带）+ 底部叠加深色字幕背景 + 中文白色大字。
 
 **Scope: YouTube URL → 真实字幕 → 拼接图**
 
 **与 `youtube-infographic` 的区别：**
-- `youtube-infographic`：把视频内容重新编辑为文章式信息长图（二次创作）
-- `youtube-subtitle-collage`：保留原始字幕原文，以时间戳卡片形式拼接展示（忠实呈现）
+- `youtube-infographic`：二次创作，编辑长图
+- `youtube-subtitle-collage`：保留原话，视频截帧 + 字幕叠字拼接图
 
-Use this skill when the user asks to: 制作字幕拼接图、把视频字幕做成图、提取视频金句做成卡片图、show real quotes from a YouTube video.
+Use this skill when the user asks to: 制作字幕拼接图、把视频字幕做成图、提取视频金句做成卡片图、show real quotes from a YouTube video as a screenshot collage.
 
 ## User Input
 
@@ -32,57 +34,115 @@ $ARGUMENTS
 ### Step 1 — Extract Subtitle Segments
 
 ```bash
-bash ~/.claude/skills/youtube-subtitle-collage/youtube-subtitle-collage extract <YouTube_URL> --output /tmp/yt-segments.json
+bash ~/.claude/skills/youtube-subtitle-collage/youtube-subtitle-collage extract '$URL' --output /tmp/yt-segments.json
 ```
 
-Read the output:
+**重要**：URL 必须用单引号包裹，防止 shell 对 `?` 进行 glob 展开。
+
+如果 `extract` 因 IP 被封失败，用 yt-dlp 直接下载字幕（备用方案）：
+
 ```bash
-cat /tmp/yt-segments.json
+# 查看可用字幕语言
+yt-dlp --cookies-from-browser chrome --js-runtimes node --remote-components ejs:github --list-subs '$URL' 2>&1 | grep -E "^(en|zh)" | head -20
+
+# 下载字幕（优先中文，其次英文）
+yt-dlp --cookies-from-browser chrome --js-runtimes node --remote-components ejs:github \
+  --write-sub --sub-lang zh-Hans --skip-download --sub-format json3 \
+  -o '/tmp/yt_sub' '$URL' 2>&1
+# 如无中文字幕，改 --sub-lang en-US
+
+# 下载视频元数据
+yt-dlp --cookies-from-browser chrome --js-runtimes node --remote-components ejs:github \
+  --write-info-json --skip-download -o '/tmp/yt_sub' '$URL' 2>&1
 ```
 
-The JSON contains: `title`, `channel`, `url`, `duration`, `transcript_language`, `segments[]` (each with `timestamp` + `text`).
+解析备用字幕（json3 格式）：
+
+```python
+import json, re
+
+with open('/tmp/yt_sub.en-US.json3') as f:  # 或 zh-Hans
+    subs = json.load(f)
+with open('/tmp/yt_sub.info.json') as f:
+    info = json.load(f)
+
+print("Title:", info.get('title'))
+print("Channel:", info.get('channel', info.get('uploader')))
+print("Duration:", info.get('duration_string'))
+
+events = subs.get('events', [])
+raw = []
+for ev in events:
+    segs = ev.get('segs', [])
+    text = ' '.join(s.get('utf8','') for s in segs).replace('\n',' ').strip()
+    text = re.sub(r'\[.*?\]', '', text).strip()
+    if not text: continue
+    start_s = ev.get('tStartMs', 0) / 1000
+    m, s = divmod(int(start_s), 60); h, m = divmod(m, 60)
+    ts = f'{h}:{m:02d}:{s:02d}' if h else f'{m}:{s:02d}'
+    raw.append({'timestamp': ts, 'start': start_s, 'text': text})
+
+# Merge into sentence-level segments
+merged, buf_text, buf_ts = [], '', ''
+for seg in raw:
+    if not buf_text: buf_ts = seg['timestamp']
+    buf_text = (buf_text + ' ' + seg['text']).strip()
+    if re.search(r'[.!?。！？]$', buf_text) and len(buf_text) > 40:
+        merged.append({'timestamp': buf_ts, 'text': buf_text})
+        buf_text = ''
+if buf_text: merged.append({'timestamp': buf_ts, 'text': buf_text})
+
+print(f"Merged: {len(merged)} segments")
+for s in merged[::max(1,len(merged)//50)][:50]:
+    print(f"[{s['timestamp']}] {s['text'][:120]}")
+```
 
 ### Step 2 — Select Best Quotes (YOU do this, Claude)
 
-Read through all segments and select **10–20 of the most impactful ones**. Criteria:
-- 金句：concise, quotable, memorable
-- 洞察：reveals a key insight or surprising fact
-- 转折点：marks a shift in the argument
-- 情感：emotionally resonant or funny
+从字幕中选出 **12–18 条**最精彩的片段。选取标准：
+- 金句：简洁、可引用、令人印象深刻
+- 洞察：揭示关键观点或令人惊讶的事实
+- 转折点：论点的重要转变
+- 情感共鸣：感人或有趣
 
-**Selection rules:**
+**选取原则：**
 - 均匀分布时间轴，不要只选开头
-- 每段字幕尽量完整表达一个意思（必要时合并相邻几条）
-- 若原文为英文，`translation` 字段填写中文翻译；若原文为中文，`translation` 可留空
-- 最多 2 个 `highlight: true`（用于最重要的金句，显示红色边框）
+- 每段字幕完整表达一个意思
+- **`text` 字段：若原字幕为中文，直接填中文；若为英文，填中文翻译**
+- `original` 字段（可选）：原文（英文时填写）
+- 最多 2 个 `highlight: true`（最重要的金句，显示红色边框）
 
 ### Step 3 — Write Collage JSON
 
-Save to `/tmp/collage-content.json`:
+保存到 `/tmp/collage-content.json`（**用 Python 写文件，不要用 heredoc**）：
 
-```json
-{
+```python
+import json
+
+data = {
   "meta": {
-    "title": "视频标题（可适当缩短，保留核心信息）",
+    "title": "视频标题",
     "channel": "频道名",
     "url": "https://www.youtube.com/watch?v=VIDEO_ID",
-    "duration": "12:34"
+    "duration": "1:23:45"
   },
   "quotes": [
     {
       "timestamp": "0:42",
-      "text": "原文字幕内容，保持原话不改动",
-      "translation": "中文翻译（原文为英文时填写）",
-      "highlight": false
+      "text": "这里填中文字幕（原文中文 or 英文翻译）",
+      "highlight": False
     },
     {
       "timestamp": "3:15",
-      "text": "This is the most important sentence in the video.",
-      "translation": "这是视频中最重要的一句话。",
-      "highlight": true
+      "text": "最重要的一句话，红框高亮显示。",
+      "highlight": True
     }
   ]
 }
+
+with open('/tmp/collage-content.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+print("JSON written, quotes:", len(data["quotes"]))
 ```
 
 ### Step 4 — Render to PNG
@@ -93,7 +153,15 @@ bash ~/.claude/skills/youtube-subtitle-collage/youtube-subtitle-collage create \
   --output ~/info_graph/subtitle-collage.png
 ```
 
-For HTML preview only:
+此命令会：
+1. 自动调用 yt-dlp 获取视频流 URL（需要 Chrome cookies）
+2. 用 ffmpeg 在每个时间戳截取视频帧
+3. 用 Pillow 叠加字幕文字
+4. 拼接成长图
+
+如果视频流获取失败，会自动降级为深色背景条带（不含视频帧）。
+
+**备用：HTML 卡片版（不需要 ffmpeg）：**
 ```bash
 bash ~/.claude/skills/youtube-subtitle-collage/youtube-subtitle-collage html \
   --content /tmp/collage-content.json \
@@ -102,31 +170,32 @@ bash ~/.claude/skills/youtube-subtitle-collage/youtube-subtitle-collage html \
 
 ### Step 5 — Show Result
 
-Read and display the PNG. Report the file path.
+读取并展示 PNG 文件，报告文件路径。
 
 ## Collage JSON Field Reference
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `meta.title` | ✅ | Video title (can be shortened) |
-| `meta.channel` | ✅ | YouTube channel name |
-| `meta.url` | ✅ | Full YouTube URL |
-| `meta.duration` | optional | e.g. `"12:34"` |
-| `quotes[].timestamp` | ✅ | e.g. `"3:42"` |
-| `quotes[].text` | ✅ | Original subtitle text, verbatim |
-| `quotes[].translation` | optional | Chinese translation if original is English |
-| `quotes[].highlight` | optional | `true` = red border card (use max 2) |
+| `meta.title` | ✅ | 视频标题 |
+| `meta.channel` | ✅ | 频道名 |
+| `meta.url` | ✅ | 完整 YouTube URL（用于截帧） |
+| `meta.duration` | optional | 如 `"1:23:45"` |
+| `quotes[].timestamp` | ✅ | 如 `"3:42"` |
+| `quotes[].text` | ✅ | **中文字幕文字**（直接显示在图上） |
+| `quotes[].highlight` | optional | `true` = 红色边框（最多 2 个） |
 
 ## Visual Design
 
-- **Background**: Dark (#0d0d0d), YouTube dark mode aesthetic
-- **Layout**: 2-column card grid, 900px wide
-- **Timestamp**: Red badge (YouTube red #FF0000) on each card
-- **Highlight cards**: Red border for the most impactful quotes
-- **Typography**: Noto Sans SC, white/gray text
+- **Layout**: 900px 宽，每条字幕 = 240px 高横向条带，白色 4px 间隔
+- **Frame**: 截取视频帧下方 60% 区域（字幕+场景）
+- **Subtitle bar**: 深色半透明圆角背景，中文白色大字（44px），居中
+- **Timestamp badge**: 左上角红色标签
+- **Highlight**: 红色边框
 - **Output**: `~/info_graph/youtube-subtitle-collage.png`
 
 ## Requirements
 
-- Python 3.11+ with `youtube-transcript-api`, `yt-dlp` (optional, for metadata)
-- Node.js + Playwright (Chromium) for PNG rendering
+- Python 3.11+ with `youtube-transcript-api`, `yt-dlp`, `Pillow`
+- **ffmpeg**（必须）：视频帧提取。安装：`brew install ffmpeg`
+- Chrome browser（用于 yt-dlp cookies 认证）
+- Node.js + Playwright（可选，仅 `html` 命令需要）
