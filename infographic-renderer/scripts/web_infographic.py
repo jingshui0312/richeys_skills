@@ -14,11 +14,16 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Any
-import requests
-import urllib3
 
-# Disable SSL warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+try:
+    import requests
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except ImportError:
+    subprocess.run(['pip3', 'install', '--break-system-packages', 'requests', 'urllib3'], check=False)
+    import requests
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def _parse_html_content(html: str, url: str, title_fallback: str = "Untitled") -> Dict[str, Any]:
@@ -516,13 +521,13 @@ body {{
 }}
 
 .container {{
-  padding: 48px 50px 40px;
+  padding: 32px 44px 24px;
   background: #FFFFFF;
 }}
 
 /* === HEADER === */
 .header {{
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }}
 
 .header-meta {{
@@ -591,8 +596,8 @@ body {{
 
 /* === BLOCK: INSIGHT === */
 .block-insight {{
-  margin: 28px 0;
-  padding: 22px 28px;
+  margin: 18px 0;
+  padding: 18px 22px;
   background: {accent};
   border-radius: 10px;
   color: white;
@@ -613,7 +618,7 @@ body {{
 
 /* === BLOCK: STEPS === */
 .block-steps {{
-  margin: 28px 0;
+  margin: 18px 0;
 }}
 
 .block-title {{
@@ -689,7 +694,7 @@ body {{
 
 /* === BLOCK: SECTION === */
 .block-section {{
-  margin: 24px 0;
+  margin: 14px 0;
   padding: 0;
 }}
 
@@ -734,7 +739,7 @@ body {{
 
 /* === BLOCK: COMPARISON === */
 .block-comparison {{
-  margin: 28px 0;
+  margin: 18px 0;
 }}
 
 .comp-grid {{
@@ -786,8 +791,8 @@ body {{
 
 /* === BLOCK: QUESTIONS === */
 .block-questions {{
-  margin: 28px 0;
-  padding: 22px 28px;
+  margin: 18px 0;
+  padding: 18px 22px;
   background: {yellow_bg};
   border-left: 4px solid {yellow_border};
   border-radius: 0 10px 10px 0;
@@ -829,8 +834,8 @@ body {{
 
 /* === BLOCK: STATS === */
 .block-stats {{
-  margin: 28px 0;
-  padding: 28px 0;
+  margin: 18px 0;
+  padding: 20px 0;
   background: {yellow_bg};
   border-radius: 10px;
 }}
@@ -862,7 +867,7 @@ body {{
 
 /* === BLOCK: LIST === */
 .block-list {{
-  margin: 24px 0;
+  margin: 14px 0;
 }}
 
 .list-title {{
@@ -895,8 +900,8 @@ body {{
 
 /* === BLOCK: QUOTE === */
 .block-quote {{
-  margin: 32px 0;
-  padding: 24px 28px;
+  margin: 20px 0;
+  padding: 18px 22px;
   background: {accent};
   border-radius: 10px;
   color: white;
@@ -925,7 +930,7 @@ body {{
 
 /* === BLOCK: HIGHLIGHT === */
 .block-highlight {{
-  margin: 24px 0;
+  margin: 14px 0;
   padding: 18px 24px;
   background: linear-gradient(135deg, {accent_light} 0%, #f0faf4 100%);
   border-radius: 10px;
@@ -941,7 +946,7 @@ body {{
 
 /* === BLOCK: DIVIDER === */
 .block-divider {{
-  margin: 24px 0;
+  margin: 14px 0;
 }}
 
 .block-divider hr {{
@@ -952,7 +957,7 @@ body {{
 
 /* === FOOTER === */
 .footer {{
-  margin-top: 36px;
+  margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #eee;
   font-size: 12px;
@@ -1025,10 +1030,18 @@ const page = await browser.newPage();
 await page.setViewportSize({{ width: {width}, height: 800 }});
 await page.goto('file://{html_file.name}', {{ waitUntil: 'networkidle' }});
 await page.waitForTimeout(2000);
-const h = await page.evaluate(() => document.documentElement.scrollHeight);
+const box = await page.evaluate(() => {{
+  const body = document.body;
+  const rect = body.getBoundingClientRect();
+  const last = body.lastElementChild;
+  let bottom = 0;
+  if (last) {{ const r = last.getBoundingClientRect(); bottom = r.bottom; }}
+  return {{ height: Math.max(rect.bottom, bottom, document.documentElement.scrollHeight) }};
+}});
+const h = Math.ceil(box.height) + 20;
 await page.setViewportSize({{ width: {width}, height: h }});
 await page.waitForTimeout(500);
-await page.screenshot({{ path: '{os.path.abspath(output_path)}', fullPage: true, type: 'png' }});
+await page.screenshot({{ path: '{os.path.abspath(output_path)}', clip: {{ x: 0, y: 0, width: {width}, height: h }}, type: 'png' }});
 console.log('OK:' + {width} + 'x' + h);
 await browser.close();
 """)

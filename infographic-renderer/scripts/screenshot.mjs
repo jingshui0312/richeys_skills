@@ -33,23 +33,39 @@ async function capture() {
   // Wait for fonts to load
   await page.waitForTimeout(2000);
 
-  // Get actual content height
-  const bodyHeight = await page.evaluate(() => {
-    return document.documentElement.scrollHeight;
+  // Get actual content bounding box (precise, no extra whitespace)
+  const contentBox = await page.evaluate(() => {
+    const body = document.body;
+    const html = document.documentElement;
+    // Use getBoundingClientRect on body for precise content bounds
+    const rect = body.getBoundingClientRect();
+    const lastChild = body.lastElementChild;
+    let bottom = 0;
+    if (lastChild) {
+      const lastRect = lastChild.getBoundingClientRect();
+      bottom = lastRect.bottom;
+    }
+    return {
+      height: Math.max(rect.bottom, bottom, html.scrollHeight),
+      // fallback to scrollHeight if rect is zero
+    };
   });
 
-  // Resize viewport to full height
-  await page.setViewportSize({ width: width, height: bodyHeight });
+  // Add small padding (20px) at bottom
+  const cropHeight = Math.ceil(contentBox.height) + 20;
+
+  // Resize viewport to content height
+  await page.setViewportSize({ width: width, height: cropHeight });
   await page.waitForTimeout(500);
 
-  // Take full page screenshot
+  // Clip screenshot to exact content area
   await page.screenshot({
     path: outputPath,
-    fullPage: true,
+    clip: { x: 0, y: 0, width: width, height: cropHeight },
     type: 'png'
   });
 
-  console.log(`Screenshot saved: ${outputPath} (${width}x${bodyHeight})`);
+  console.log(`Screenshot saved: ${outputPath} (${width}x${cropHeight})`);
 
   await browser.close();
 }
