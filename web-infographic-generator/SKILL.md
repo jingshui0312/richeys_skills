@@ -29,11 +29,20 @@ The `--js` flag uses Playwright (Chromium) to fully render the page before extra
 
 **When to use `--js`**: Use it for known SPA sites (X/Twitter, LinkedIn, GitHub, notion.so, any `.app` domain) or when static extraction returns fewer than ~200 chars of content. When in doubt, try static first — if content is empty or clearly incomplete, retry with `--js`.
 
-**Step 2 — Agent analyzes content**
+**Step 2 — Verify content completeness**
+
+⚠️ **必须先确保内容完整，再开始分析生成。**
+
+1. 检查提取的原始内容是否包含文章所有章节（对比页面导航/目录）
+2. 如果内容明显被截断（句子未完结、章节缺失、字数异常少），需重新提取或换用 `--js` 模式
+3. 对于超长文章，可分段提取后拼接
+4. 仅在确认内容完整后，才进入 Step 3
+
+**Step 3 — Agent analyzes content**
 
 The agent reads the raw content and produces structured JSON following the Content JSON Format and Editorial Principles below. Save to `/tmp/content.json`.
 
-**Step 3 — Render**
+**Step 4 — Render**
 ```bash
 web-infographic create --content /tmp/content.json --output ~/info_graph/result.png
 ```
@@ -43,6 +52,8 @@ web-infographic create --content /tmp/content.json --output ~/info_graph/result.
 ### Path 2: Agent-Only (no Bash tool available)
 
 **Step 1 — Fetch content** via the agent's web browsing / fetch capability.
+
+⚠️ **必须先确保内容完整：** `web_fetch` 的 `maxChars` 设为 50,000 或不设。检查 `truncated` 字段，若为 `true` 需增大 `maxChars` 重新抓取。对比原文目录确认所有章节齐全。
 
 **Step 2 — Agent analyzes content** → produces blocks JSON per the format below.
 

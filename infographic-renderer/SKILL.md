@@ -17,6 +17,14 @@ tags:
 
 Use this skill when the user provides content directly: pasted article text, a transcript, a document, notes, or any in-conversation text that should be turned into an infographic. Do NOT use this skill when the user provides a URL — use `web-infographic-generator` instead.
 
+## Content Completeness (Mandatory — all paths)
+
+⚠️ **必须先确保内容完整，再开始制作信息长图。**
+
+- 检查用户提供的文本是否完整：长度是否与预期匹配，有无截断迹象（句子未完结、章节不完整）
+- 如内容疑似不完整，主动向用户确认后再继续
+- 仅在确认内容完整后，才进入 Step 1 生成结构化 JSON
+
 ## Workflow — Choose a Path Based on Available Tools
 
 ---
