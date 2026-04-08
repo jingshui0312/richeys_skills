@@ -13,17 +13,47 @@ tags:
 
 将结构化内容 JSON 渲染为专业级信息长图（PNG），品质对标 36氪、极客公园、少数派专栏。
 
-**Scope: direct content input only — NOT for URLs.**
-
-Use this skill when the user provides content directly: pasted article text, a transcript, a document, notes, or any in-conversation text that should be turned into an infographic. Do NOT use this skill when the user provides a URL — use `web-infographic-generator` instead.
+Use this skill whenever the user asks to: generate an infographic from content, create a long-form image, render a visual summary, produce 信息长图, or convert structured content into a professional image.
 
 ## Content Completeness (Mandatory — all paths)
 
 ⚠️ **必须先确保内容完整，再开始制作信息长图。**
 
-- 检查用户提供的文本是否完整：长度是否与预期匹配，有无截断迹象（句子未完结、章节不完整）
-- 如内容疑似不完整，主动向用户确认后再继续
-- 仅在确认内容完整后，才进入 Step 1 生成结构化 JSON
+### 从 URL 抓取内容时
+
+1. `web_fetch` 的 `maxChars` 设为 **50,000** 或不设（让返回全文）
+2. 检查返回结果的 `truncated` 字段：
+   - `truncated: false` → 内容完整，继续
+   - `truncated: true` → **内容被截断！** 增大 `maxChars` 重新抓取，或分段抓取后拼接
+3. **完整性验证**：对比原文目录/章节列表，确认所有章节都包含在抓取内容中
+4. 仅在确认内容完整后，才进入 Step 1 生成结构化 JSON
+
+### 从用户直接提供文本时
+
+检查文本长度是否与预期匹配，是否有明显的截断迹象（如句子未完结、章节不完整）。
+
+---
+
+## Reading Stats（强制 — 所有路径）
+
+⚠️ **生成的 content.json 必须包含 `reading_stats` 字段**，在长图底部展示阅读统计，让用户了解内容覆盖度。
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `chars` | number | 实际阅读的字符数 |
+| `paragraphs` | number | 阅读的段落数 |
+| `sections` | number | 覆盖的章节数 |
+| `source_type` | string | 来源类型（如"文章全文"、"播客文字稿"、"播客介绍页"、"视频字幕"等） |
+| `completeness` | string | 完整度描述（如"全文"、"概要"、"节选"、"截断"） |
+
+### 规则
+- **诚实标注**：如果只读了摘要/介绍页，`completeness` 必须写"概要"，不能写"全文"
+- 所有字段都是可选的，但至少应包含 `chars`、`source_type` 和 `completeness`
+- Agent 在 Step 1 生成 content.json 时，必须根据实际抓取情况填写这些数据
+
+---
 
 ## Workflow — Choose a Path Based on Available Tools
 
@@ -90,6 +120,13 @@ web-infographic html --content /tmp/content.json --output ~/info_graph/result.ht
     "title": "Chinese Main Title (15 chars max)",
     "subtitle": "ENGLISH SUBTITLE IN CAPS",
     "description": "One-line description"
+  },
+  "reading_stats": {
+    "chars": 15000,
+    "paragraphs": 120,
+    "sections": 8,
+    "source_type": "播客介绍页",
+    "completeness": "概要"
   },
   "blocks": [
     {"type": "text", "content": "Introduction paragraph..."},

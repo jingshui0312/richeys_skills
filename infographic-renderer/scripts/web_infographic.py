@@ -341,6 +341,37 @@ def fallback_analysis(web_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _render_reading_stats(meta: Dict[str, Any], data: Dict[str, Any]) -> str:
+    """Render content reading statistics bar at the bottom"""
+    stats = data.get('reading_stats', {})
+    if not stats:
+        return ''
+
+    items = []
+    if stats.get('chars'):
+        chars = stats['chars']
+        label = f"{chars:,} 字" if isinstance(chars, int) else f"{chars} 字"
+        items.append(f'<div class="rs-item"><div class="rs-value">{label}</div><div class="rs-label">阅读量</div></div>')
+    if stats.get('paragraphs'):
+        items.append(f'<div class="rs-item"><div class="rs-value">{stats["paragraphs"]}</div><div class="rs-label">段落</div></div>')
+    if stats.get('sections'):
+        items.append(f'<div class="rs-item"><div class="rs-value">{stats["sections"]}</div><div class="rs-label">章节</div></div>')
+    if stats.get('source_type'):
+        items.append(f'<div class="rs-item"><div class="rs-value">{stats["source_type"]}</div><div class="rs-label">来源类型</div></div>')
+    if stats.get('completeness'):
+        items.append(f'<div class="rs-item"><div class="rs-value">{stats["completeness"]}</div><div class="rs-label">完整度</div></div>')
+
+    if not items:
+        return ''
+
+    items_html = ''.join(items)
+    return f"""
+  <div class="reading-stats">
+    <div class="rs-label-bar">📊 内容阅读统计</div>
+    <div class="rs-grid">{items_html}</div>
+  </div>"""
+
+
 def generate_html(data: Dict[str, Any]) -> str:
     """Generate professional editorial HTML from structured content blocks"""
 
@@ -955,6 +986,41 @@ body {{
   background: #e8e8e8;
 }}
 
+/* === READING STATS === */
+.reading-stats {{
+  margin: 0;
+  padding-top: 6px;
+}}
+
+.rs-label-bar {{
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 2px;
+}}
+
+.rs-grid {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}}
+
+.rs-item {{
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}}
+
+.rs-value {{
+  font-size: 12px;
+  font-weight: 500;
+  color: #aaa;
+}}
+
+.rs-label {{
+  font-size: 12px;
+  color: #aaa;
+}}
+
 /* === FOOTER === */
 .footer {{
   margin-top: 20px;
@@ -988,6 +1054,7 @@ body {{
 
   <!-- FOOTER -->
   <div class="footer">
+    {_render_reading_stats(meta, data)}
     <span class="footer-source">{meta.get('source', '')}</span>
   </div>
 
