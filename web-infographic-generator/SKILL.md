@@ -44,7 +44,7 @@ The agent reads the raw content and produces structured JSON following the Conte
 
 **Step 4 — Render**
 ```bash
-web-infographic create --content /tmp/content.json --output ~/info_graph/result.png
+web-infographic create --content /tmp/content.json --output ./infographic.png
 ```
 
 ---
@@ -180,7 +180,7 @@ Footer: source URL in accent color, separated by `1px #eee` top border.
 
 ## Output
 
-- **Fixed output directory**: `~/info_graph/` — always use this, never /tmp or other paths
+- **Output directory**: current working directory (`.`) — save PNG and HTML here
 - **Path 1**: PNG (780px wide, full-page) + HTML file saved alongside in same directory
 - **Path 2**: HTML artifact or file saved to output directory
 - Professional editorial quality matching Chinese tech media standards (36kr, GeekPark, SSPAI)

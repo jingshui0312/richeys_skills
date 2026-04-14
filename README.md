@@ -83,7 +83,7 @@ export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
 
 ### 🖼️ infographic-renderer
 
-> 将结构化内容 JSON 渲染为专业信息长图——可独立使用，也可被其他 skill 调用
+> 将任意内容（直接文本或 URL）渲染为专业信息长图，可独立使用也可被其他 skill 调用
 
 | 属性 | 值 |
 |------|-----|
@@ -94,8 +94,9 @@ export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
 
 **核心能力：**
 
-- 📄 输入结构化 JSON → 输出专业信息长图（PNG），纯渲染，不含抓取
+- 📄 支持直接输入文本或 URL → 输出专业信息长图（PNG）
 - 🧱 11 种内容 Block：段落、洞察、步骤卡、对比栏、数据展示、引用等
+- 📊 **Reading Stats**：长图底部自动展示阅读统计（字符数、段落数、章节数、来源类型、完整度）
 - 🎨 780px 精确排版，绿色设计风格，完美适配移动端分享
 - 🤖 无 CLI 环境时，Agent 直接生成 HTML artifact（Path 2）
 - 🔌 作为渲染底层供 web-infographic-generator / youtube-infographic 调用
@@ -103,14 +104,14 @@ export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
 **快速体验：**
 
 ```bash
-# 从 JSON 内容生成长图
-web-infographic create --content content.json --output ~/info_graph/result.png
+# 从 JSON 内容生成长图（输出到当前目录）
+web-infographic create --content content.json --output ./infographic.png
 
 # 仅生成 HTML（预览/调试）
-web-infographic html --content content.json --output result.html
+web-infographic html --content content.json --output ./infographic.html
 ```
 
-> 适合在不需要网页抓取能力的平台上单独安装，也是最小可用的信息长图渲染单元。
+> 最小可用的信息长图渲染单元，适合直接输入文本内容的场景。
 
 ---
 
@@ -317,7 +318,7 @@ richeys_skills/
 │   └── scripts/
 │       ├── web_infographic.py   # 主程序
 │       └── screenshot.mjs       # Playwright 截图引擎
-├── infographic-renderer/        # 信息长图渲染器（纯渲染，无抓取）
+├── infographic-renderer/        # 信息长图渲染器（支持文本/URL，含阅读统计）
 │   ├── skill.json               # Skill 元数据
 │   ├── SKILL.md                 # Claude 使用说明
 │   ├── web-infographic          # CLI 入口

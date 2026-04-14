@@ -106,14 +106,14 @@ Write the JSON to `/tmp/infographic-content.json`.
 Use the web-infographic-generator's `create` command to render the JSON into a PNG:
 
 ```bash
-bash ~/.claude/skills/web-infographic-generator/web-infographic create --content /tmp/infographic-content.json --output <output_path>.png
+bash ~/.claude/skills/web-infographic-generator/web-infographic create --content /tmp/infographic-content.json --output ./youtube-infographic.png
 ```
 
-Default output path: `outputs/youtube-infographic.png` in the current working directory.
+Default output path: `./youtube-infographic.png` (current working directory).
 
 If the user only wants HTML preview:
 ```bash
-bash ~/.claude/skills/web-infographic-generator/web-infographic html --content /tmp/infographic-content.json --output <output_path>.html
+bash ~/.claude/skills/web-infographic-generator/web-infographic html --content /tmp/infographic-content.json --output ./youtube-infographic.html
 ```
 
 ### Step 4: Show Result
