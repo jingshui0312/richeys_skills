@@ -67,12 +67,12 @@ The agent reads the user's provided content (article text, URL content, video tr
 
 **Step 2 — Render to PNG**
 ```bash
-web-infographic create --content /tmp/content.json --output ./infographic.png
+web-infographic create --content /tmp/content.json --output ~/info_graph/result.png
 ```
 
 **Generate HTML only (for preview/debugging):**
 ```bash
-web-infographic html --content /tmp/content.json --output ./infographic.html
+web-infographic html --content /tmp/content.json --output ~/info_graph/result.html
 ```
 
 ---
@@ -117,6 +117,7 @@ web-infographic html --content /tmp/content.json --output ./infographic.html
   "meta": {
     "author": "Author / Source Name",
     "source": "https://example.com/article",
+    "signature": "Richey Li",
     "title": "Chinese Main Title (15 chars max)",
     "subtitle": "ENGLISH SUBTITLE IN CAPS",
     "description": "One-line description"
@@ -199,6 +200,6 @@ Footer: source URL in accent color, separated by `1px #eee` top border.
 
 ## Output
 
-- **Output directory**: current working directory (`.`) — save PNG and HTML here
+- **Fixed output directory**: `~/info_graph/` — always use this path
 - **Path 1**: PNG (780px wide, full-page) + HTML file saved alongside
 - **Path 2**: HTML artifact or file

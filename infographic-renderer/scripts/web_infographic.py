@@ -341,6 +341,14 @@ def fallback_analysis(web_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _render_signature(meta: Dict[str, Any], data: Dict[str, Any]) -> str:
+    """Render optional author signature below content blocks"""
+    signature = meta.get('signature', '')
+    if not signature:
+        return ''
+    return f'  <div class="signature">— {signature}</div>'
+
+
 def _render_reading_stats(meta: Dict[str, Any], data: Dict[str, Any]) -> str:
     """Render content reading statistics bar at the bottom"""
     stats = data.get('reading_stats', {})
@@ -1030,6 +1038,14 @@ body {{
   color: #aaa;
 }}
 
+.signature {{
+  text-align: right;
+  color: {accent};
+  font-size: 13px;
+  margin-top: 16px;
+  font-style: italic;
+}}
+
 .footer-source {{
   color: {accent};
 }}
@@ -1051,6 +1067,9 @@ body {{
 
   <!-- CONTENT BLOCKS -->
   {blocks_html}
+
+  <!-- SIGNATURE -->
+  {_render_signature(meta, data)}
 
   <!-- FOOTER -->
   <div class="footer">
