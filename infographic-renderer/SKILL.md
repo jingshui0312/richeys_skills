@@ -19,12 +19,24 @@ Use this skill whenever the user asks to: generate an infographic from content, 
 
 ⚠️ **必须先确保内容完整，再开始制作信息长图。**
 
-### 从 URL 抓取内容时
+### 内容源优先级（从 URL/视频获取内容时）
 
-1. `web_fetch` 的 `maxChars` 设为 **50,000** 或不设（让返回全文）
+按以下优先级选择内容获取方式，确保拿到完整内容：
+
+1. **YouTube 视频** → 优先使用 `yt-dlp` 下载字幕（`--write-auto-sub --sub-lang en --skip-download`），再提取纯文本。这是获取完整视频内容最可靠的方式
+2. **有全文的文章页面** → `web_fetch` 抓取，`maxChars` 设为 **100,000**（默认 50K 对长文不够）
+3. **截断时的降级方案**：
+   - 先尝试增大 `maxChars` 重新抓取
+   - 再尝试从其他源（如 podscripts.co、翻译站）获取全文
+   - 对于播客/长视频，最终降级到 `yt-dlp` 字幕
+4. **禁止在内容截断时直接生成信息长图** — 必须拿到完整内容后再做
+
+### 从 URL 抓取内容时（补充流程）
+
+1. `web_fetch` 的 `maxChars` 设为 **100,000**（长文和播客文稿通常超过 50K）
 2. 检查返回结果的 `truncated` 字段：
    - `truncated: false` → 内容完整，继续
-   - `truncated: true` → **内容被截断！** 增大 `maxChars` 重新抓取，或分段抓取后拼接
+   - `truncated: true` → **内容被截断！** 按上述降级方案处理
 3. **完整性验证**：对比原文目录/章节列表，确认所有章节都包含在抓取内容中
 4. 仅在确认内容完整后，才进入 Step 1 生成结构化 JSON
 
