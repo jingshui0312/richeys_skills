@@ -236,6 +236,42 @@ cd youtube-subtitle-collage && bash install.sh
 
 ---
 
+### 🐙 github-manager
+
+> 用自然语言操作 GitHub——查仓库、管 Issues、开 PR，全程不离 Claude
+
+| 属性 | 值 |
+|------|-----|
+| 版本 | `1.0.0` |
+| 语言 | gh CLI |
+| 作者 | richey.li |
+| 依赖 | gh CLI + GitHub Token |
+
+**核心能力：**
+
+- 🔍 查看仓库信息：stars、描述、语言、分支、文件目录
+- 📄 读取任意文件内容（自动 Base64 解码）
+- ✍️ 创建或更新文件（自动生成 commit）
+- 📋 Issues 全生命周期：列出、创建、编辑、关闭、评论
+- 🔀 PR 全生命周期：列出、创建、Review、合并、关闭
+
+**触发示例：**
+
+```
+帮我查看 owner/repo 的仓库信息
+列出 owner/repo 最近的 Issues
+帮我在 owner/repo 创建一个 PR
+读取 https://github.com/owner/repo 的 README
+```
+
+**环境变量：**
+
+```bash
+export GITHUB_TOKEN=your_personal_access_token
+```
+
+---
+
 ### 🦞 openclaw
 
 > 敬请期待...
@@ -255,6 +291,7 @@ cd youtube-infographic && bash install.sh
 cd youtube-subtitle-collage && bash install.sh
 cd obsidian-manager && bash install.sh
 cd infographic-renderer && bash install.sh
+cd github-manager && bash install.sh
 ```
 
 或者直接复制到 Claude Skills 目录：
@@ -265,6 +302,7 @@ cp -r youtube-infographic ~/.claude/skills/
 cp -r youtube-subtitle-collage ~/.claude/skills/
 cp -r obsidian-manager ~/.claude/skills/
 cp -r infographic-renderer ~/.claude/skills/
+cp -r github-manager ~/.claude/skills/
 ```
 
 ---
@@ -314,6 +352,14 @@ richeys_skills/
 │   ├── README.md                # 详细使用文档
 │   └── scripts/
 │       └── obsidian_tool.py     # 核心实现（纯标准库）
+├── github-manager/              # GitHub 仓库管理器
+│   ├── skill.json               # Skill 元数据
+│   ├── SKILL.md                 # Claude 使用说明
+│   ├── install.sh               # 安装脚本（检查 gh CLI 和认证）
+│   ├── evals/
+│   │   └── evals.json           # 评测用例
+│   └── references/
+│       └── gh-commands.md       # gh CLI 命令速查
 └── openclaw/                    # 🚧 建设中
 ```
 
