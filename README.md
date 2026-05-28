@@ -30,56 +30,15 @@
 
 ```bash
 # 安装一个 skill
-claude skill install web-infographic-generator
+claude skill install infographic-renderer
 
 # 然后直接用
-web-infographic analyze "https://example.com/article"
+web-infographic create --content content.json --output ./infographic.png
 ```
 
 ---
 
 ## 技能库
-
-### 🖼️ web-infographic-generator
-
-> 把任意网页变成一张专业信息长图
-
-| 属性 | 值 |
-|------|-----|
-| 版本 | `1.0.0` |
-| 语言 | Python + Node.js |
-| 作者 | HappyCapy |
-| 风格 | 36氪 / 极客公园 / 少数派 |
-
-**核心能力：**
-
-- 🔗 输入 URL → 输出专业信息长图，全自动
-- 🤖 LLM 深度分析，重新撰写内容，非简单摘抄
-- 🎨 多种视觉风格：科技 / 商务 / 极简 / 手绘漫画
-- 📐 780px 精确排版，完美适配移动端分享
-- 🇨🇳 原生中文支持，Noto Sans SC 字体
-
-**快速体验：**
-
-```bash
-# 分析文章，生成长图
-web-infographic analyze "https://sspai.com/post/xxxxx"
-
-# 手绘风格（推荐）
-web-infographic analyze "https://36kr.com/p/xxxxx" --style comic
-
-# 从 JSON 内容生成
-web-infographic create --content content.json --output result.png
-```
-
-**环境变量：**
-
-```bash
-export AI_GATEWAY_API_KEY="your-key"
-export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
-```
-
----
 
 ### 🖼️ infographic-renderer
 
@@ -99,7 +58,7 @@ export AI_GATEWAY_BASE_URL="https://your-gateway/api/v1"
 - 📊 **Reading Stats**：长图底部自动展示阅读统计（字符数、段落数、章节数、来源类型、完整度）
 - 🎨 780px 精确排版，绿色设计风格，完美适配移动端分享
 - 🤖 无 CLI 环境时，Agent 直接生成 HTML artifact（Path 2）
-- 🔌 作为渲染底层供 web-infographic-generator / youtube-infographic 调用
+- 🔌 作为渲染底层供 youtube-infographic 调用
 
 **快速体验：**
 
@@ -125,7 +84,7 @@ web-infographic html --content content.json --output ./infographic.html
 | 语言 | Python |
 | 作者 | HappyCapy |
 | 风格 | 36氪 / 极客公园 / 少数派 |
-| 依赖 | web-infographic-generator（渲染层） |
+| 依赖 | infographic-renderer（渲染层） |
 
 **核心能力：**
 
@@ -154,7 +113,7 @@ youtube-infographic "https://youtu.be/xxxxx" --no-transcript
 pip install youtube-transcript-api yt-dlp
 ```
 
-> ⚠️ 需先安装 `web-infographic-generator`，渲染层由其提供。
+> ⚠️ 需先安装 `infographic-renderer`，渲染层由其提供。
 
 ---
 
@@ -286,18 +245,16 @@ git clone https://github.com/jingshui0312/richeys_skills.git
 cd richeys_skills
 
 # 安装指定 skill
-cd web-infographic-generator && bash install.sh
+cd infographic-renderer && bash install.sh
 cd youtube-infographic && bash install.sh
 cd youtube-subtitle-collage && bash install.sh
 cd obsidian-manager && bash install.sh
-cd infographic-renderer && bash install.sh
 cd github-manager && bash install.sh
 ```
 
 或者直接复制到 Claude Skills 目录：
 
 ```bash
-cp -r web-infographic-generator ~/.claude/skills/
 cp -r youtube-infographic ~/.claude/skills/
 cp -r youtube-subtitle-collage ~/.claude/skills/
 cp -r obsidian-manager ~/.claude/skills/
@@ -311,15 +268,6 @@ cp -r github-manager ~/.claude/skills/
 
 ```
 richeys_skills/
-├── web-infographic-generator/   # 网页信息长图生成器
-│   ├── skill.json               # Skill 元数据
-│   ├── SKILL.md                 # Claude 使用说明
-│   ├── web-infographic          # CLI 入口
-│   ├── install.sh               # 安装脚本
-│   ├── requirements.txt         # Python 依赖
-│   └── scripts/
-│       ├── web_infographic.py   # 主程序
-│       └── screenshot.mjs       # Playwright 截图引擎
 ├── infographic-renderer/        # 信息长图渲染器（支持文本/URL，含阅读统计）
 │   ├── skill.json               # Skill 元数据
 │   ├── SKILL.md                 # Claude 使用说明
