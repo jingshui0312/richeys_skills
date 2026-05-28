@@ -158,41 +158,6 @@ pip install youtube-transcript-api yt-dlp
 
 ---
 
-### 📕 xiaohongshu-browser
-
-> 用 Claude 浏览小红书——搜索、截图、提取内容，全自动
-
-| 属性 | 值 |
-|------|-----|
-| 版本 | `1.0.0` |
-| 语言 | Python + Playwright |
-| 触发词 | 小红书 / xhs / xiaohongshu / RED App |
-
-**核心能力：**
-
-- 📱 二维码扫码登录，会话保持 12 小时，无需重复登录
-- 🔍 搜索笔记 / 用户，支持关键词直接检索
-- 📸 自动截图并展示给用户，支持懒加载滚动
-- 📝 提取页面文字内容，结合 Claude 做二次分析
-- 🔄 二维码每 30 秒自动刷新，扫码体验流畅
-
-**触发示例：**
-
-```
-帮我搜一下小红书上关于「极简穿搭」的笔记
-看看小红书这个用户的主页：https://www.xiaohongshu.com/user/profile/xxx
-抓取小红书首页的推荐内容
-```
-
-**依赖安装：**
-
-```bash
-pip install playwright
-playwright install chromium
-```
-
----
-
 ### 📓 obsidian-manager
 
 > 对话式管理 Obsidian 知识库——写日记、记想法、搜笔记，全程不离开 Claude
@@ -298,7 +263,6 @@ cd infographic-renderer && bash install.sh
 cp -r web-infographic-generator ~/.claude/skills/
 cp -r youtube-infographic ~/.claude/skills/
 cp -r youtube-subtitle-collage ~/.claude/skills/
-cp -r xiaohongshu-browser ~/.claude/skills/
 cp -r obsidian-manager ~/.claude/skills/
 cp -r infographic-renderer ~/.claude/skills/
 ```
@@ -342,10 +306,6 @@ richeys_skills/
 │   └── scripts/
 │       ├── extract_segments.py  # 字幕提取（均匀采样全视频）
 │       └── render_frames.py     # Storyboard 截帧 + Pillow 合成
-├── xiaohongshu-browser/         # 小红书浏览器
-│   ├── SKILL.md                 # Claude 使用说明
-│   └── scripts/
-│       └── xhs_session.py       # Playwright 会话管理
 ├── obsidian-manager/            # Obsidian 知识库管理器
 │   ├── skill.json               # Skill 元数据
 │   ├── SKILL.md                 # Claude 使用说明
