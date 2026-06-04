@@ -1112,7 +1112,7 @@ import {{ chromium }} from 'playwright';
 import path from 'path';
 
 const browser = await chromium.launch({{ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }});
-const page = await browser.newPage();
+const page = await browser.newPage({{ deviceScaleFactor: 2 }});
 await page.setViewportSize({{ width: {width}, height: 800 }});
 await page.goto('file://{html_file.name}', {{ waitUntil: 'networkidle' }});
 await page.waitForTimeout(2000);
