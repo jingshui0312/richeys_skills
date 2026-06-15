@@ -551,16 +551,16 @@ body {{
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #FFFFFF;
   color: #1a1a2e;
-  width: 780px;
+  width: 1080px;
   margin: 0 auto;
   padding: 0;
   line-height: 1.75;
-  font-size: 15px;
+  font-size: 17px;
   -webkit-font-smoothing: antialiased;
 }}
 
 .container {{
-  padding: 32px 44px 24px;
+  padding: 40px 60px 30px;
   background: #FFFFFF;
 }}
 
@@ -598,7 +598,7 @@ body {{
 
 .header-title {{
   font-family: 'Noto Sans SC', sans-serif;
-  font-size: 36px;
+  font-size: 42px;
   font-weight: 900;
   line-height: 1.3;
   color: #0d0d0d;
@@ -616,7 +616,7 @@ body {{
 }}
 
 .header-desc {{
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
   line-height: 1.6;
 }}
@@ -628,7 +628,7 @@ body {{
 }}
 
 .block-text p {{
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.85;
   color: #333;
 }}
@@ -696,7 +696,7 @@ body {{
 }}
 
 .step-title {{
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #1a1a2e;
   margin-bottom: 4px;
@@ -748,7 +748,7 @@ body {{
 }}
 
 .section-lead {{
-  font-size: 15px;
+  font-size: 17px;
   color: #444;
   line-height: 1.8;
   margin-bottom: 12px;
@@ -773,7 +773,7 @@ body {{
   left: 0;
   color: {accent};
   font-weight: bold;
-  font-size: 14px;
+  font-size: 16px;
 }}
 
 /* === BLOCK: COMPARISON === */
@@ -795,7 +795,7 @@ body {{
 }}
 
 .comp-title {{
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: {accent};
   margin-bottom: 4px;
@@ -855,7 +855,7 @@ body {{
 }}
 
 .questions-list li {{
-  font-size: 15px;
+  font-size: 17px;
   color: #333;
   line-height: 1.8;
   padding: 4px 0;
@@ -891,7 +891,7 @@ body {{
 }}
 
 .stat-value {{
-  font-size: 36px;
+  font-size: 42px;
   font-weight: 900;
   color: #1a1a2e;
   line-height: 1.2;
@@ -955,7 +955,7 @@ body {{
 }}
 
 .quote-text {{
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.8;
   font-weight: 500;
 }}
@@ -977,7 +977,7 @@ body {{
 }}
 
 .block-highlight p {{
-  font-size: 15px;
+  font-size: 17px;
   color: {accent_dark};
   line-height: 1.8;
   font-weight: 500;
@@ -1084,7 +1084,7 @@ body {{
     return html
 
 
-def render_html_to_image(html_content: str, output_path: str, width: int = 780) -> str:
+def render_html_to_image(html_content: str, output_path: str, width: int = 1080) -> str:
     """Render HTML to PNG image using Playwright for full-page capture"""
     import shutil
 
@@ -1112,7 +1112,7 @@ import {{ chromium }} from 'playwright';
 import path from 'path';
 
 const browser = await chromium.launch({{ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }});
-const page = await browser.newPage({{ deviceScaleFactor: 2 }});
+const page = await browser.newPage({{ deviceScaleFactor: 3 }});
 await page.setViewportSize({{ width: {width}, height: 800 }});
 await page.goto('file://{html_file.name}', {{ waitUntil: 'networkidle' }});
 await page.waitForTimeout(2000);

@@ -162,8 +162,10 @@ web-infographic html --content /tmp/content.json --output ~/info_graph/result.ht
 
 ## CLI Commands (Path 1 only)
 
+> ⚙️ **分辨率默认配置**：内容宽度 1080px，3x Retina（输出 3240px 宽），大字号间距。已在 `web_infographic.py` 中硬编码，无需额外传参。
+
 ```bash
-# Render JSON to PNG (780px wide, full-page)
+# Render JSON to PNG (1080px content width, 3x Retina, full-page)
 web-infographic create --content content.json [--output path.png]
 
 # Generate HTML only (for preview or manual screenshot)
@@ -174,7 +176,7 @@ web-infographic html --content content.json [--output path.html]
 
 When generating HTML directly, use these design tokens and structure:
 
-**Page:** 780px wide, white background, `font-family: 'Noto Sans SC', sans-serif`, load from Google Fonts.
+**Page:** 1080px wide, white background, `font-family: 'Noto Sans SC', sans-serif`, load from Google Fonts.
 
 **Colors:**
 - Accent: `#1a9a6b` (green) — used for headings, bullets, numbers, insight/quote backgrounds
@@ -182,7 +184,7 @@ When generating HTML directly, use these design tokens and structure:
 - Yellow bg: `#fef9e7`, border `#f0d858` — questions block
 - Red: `#e74c3c` — question bullets
 
-**Block HTML patterns** (container `<div class="container">` with `padding: 48px 50px`):
+**Block HTML patterns** (container `<div class="container">` with `padding: 40px 60px 30px`):
 
 - `text` → `<div class="block-text"><p>…</p></div>`
 - `insight` → green background div, white text, label + content
@@ -190,7 +192,7 @@ When generating HTML directly, use these design tokens and structure:
 - `section` → heading with 2px accent bottom border + bullet list with `▸` prefix
 - `comparison` → 2-column CSS grid, each column in `#f8fafb` card
 - `questions` → yellow bg, left 4px accent border, `❓` icon, red `●` bullets
-- `stats` → yellow bg, large font (36px 900 weight) values in grid
+- `stats` → yellow bg, large font (42px 900 weight) values in grid
 - `list` → numbered items with accent-colored numbers
 - `quote` → green background, `❝` mark, white text
 - `divider` → `<hr>` with `#e8e8e8` color
@@ -199,7 +201,7 @@ Footer: source URL in accent color, separated by `1px #eee` top border.
 
 ## Architecture
 
-- **Rendering Engine**: HTML/CSS + Playwright full-page screenshot (780px width)
+- **Rendering Engine**: HTML/CSS + Playwright full-page screenshot (1080px content width, 3x deviceScaleFactor = 3240px output)
 - **Content Analysis**: Always performed by the running agent's own LLM
 - **Visual Design**: Clean editorial style with green/teal accent
 - **Typography**: Noto Sans SC (Google Fonts) for Chinese, system sans-serif for English
@@ -213,5 +215,5 @@ Footer: source URL in accent color, separated by `1px #eee` top border.
 ## Output
 
 - **Fixed output directory**: `~/info_graph/` — always use this path
-- **Path 1**: PNG (780px wide, full-page) + HTML file saved alongside
+- **Path 1**: PNG (1080px content width, 3x Retina, full-page) + HTML file saved alongside
 - **Path 2**: HTML artifact or file
